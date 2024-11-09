@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url(data/interface/icon/background.png);
+        }
+::-webkit-scrollbar {display: none;}
+
+        .logo {
+            width: 100%;
+            background: #000000de;
+            border-radius: 40px;
+        }
+
+        img.imglogo {
+            margin: 10px auto;
+            height: 140px;
+            padding-left: 40%;
+            padding-right: 30%;
+        }
+
+        .nav-menu {
+            width: 100%;
+            background-color: #a58154;
+            padding: 10px 0;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            margin: 0 20px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #604b31;
+        }
+
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: left;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+}
+
+        .nav-menu a:hover {
+            background-color: #d5bc8f;
+        }
+
+        table#itemTable td {
+            text-transform: capitalize;
+            border-color: rgb(96 75 49);
+        }
+
+        span.itemname {
+            vertical-align: top;
+            font-size: large;
+            text-transform: capitalize;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        div#ventanadeinfo {
+            display: flex;
+            margin-top: 120px;
+            padding: 0;
+            position: absolute;
+        }
+
+        #contentPane {
+            width: 60%;
+            padding-left: 680px;
+            margin-top: 40px;
+            text-align-last: center;
+        }
+
+        td:hover {
+            background: #858585bf;
+        }
+
+        td.selected {
+            background: white;
+            color: black;
+        }
+
+        td {
+            border-radius: 20px;
+            background: #000000de;
+            color: white;
+            font-weight: bold;
+            text-align-last: center;
+        }
+
+        #itemTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        label.itemperpage {
+            color: wheat;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        #itemTable th, #itemTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        button:disabled {
+            border-radius: 10px;
+            background: #675638;
+            color: black;
+            font-weight: bold;
+        }
+
+        button {
+            border-radius: 10px;
+            background: #d5bc8f;
+            color: black;
+            font-weight: bold;
+        }
+
+        input#searchInput {
+            background: lightgrey;
+            border-radius: 10px;
+            font-weight: bolder;
+            color: black;
+            text-align: center;
+        }
+
+        select {
+            border-radius: 10px;
+            background: burlywood;
+            color: black;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        #itemTable th {
+            background-color: #a58154;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            border-color: #604b31;
+        }
+
+        label.Filtro {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        span#currentPage {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        .info-content img {
+            border-color: rgb(96 75 49);
+            border-radius: 10px;
+            border-style: ridge;
+        }
+
+        .separador {
+            display: flex;
+        }
+    </style>
+    <link rel="stylesheet" href="stylesQuests.css">
+</head>
+<body>
+    <div class="logo">
+        <canvas class="imglogo" id="canvasLogo" style="place-self: center; display: block; width: 25%;" alt="Logo"></canvas>
+    </div>
+
+    <div class="nav-menu">
+        <a href="index.html">Items</a>
+        <a href="quests.html">Quests</a>
+        <a href="npc.html">NPC</a>
+        <a href="monsters.html">Monsters</a>
+    </div>
+
+    <div class="flexmenu">
+        <div id="ventanadeinfo">
+            <div id="infoPanel" style="top: 190px;">
+                <div id="itemInfo" style="width: 88%;border-radius: 20px;height: 100%;text-shadow: 0 0 13px black;padding-left: 30px;">
+                </div>
+            </div>
+        </div>
+        <div id="contentPane">
+    <div class="Filtros">
+            <label class="itemperpage" for="itemsPerPage">Items por página:</label>
+            <select id="itemsPerPage">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+            </select>
+            <br><br>
+            <input type="text" id="searchInput" placeholder="Buscar...">
+            <br><br>
+            <label for="typeFilter" class="Filtro">Filtrar por Tipo:</label>
+            <select id="typeFilter">
+                <option value="">Todos</option>
+            </select>
+            <br><br>
+<label for="minLevelInput" class="Filtro">Filtrar por Nivel:</label>
+De: <input type="number" id="minLevelInput" min="1" max="100" value="1" oninput="updateLevelRange()">
+Hasta: <input type="number" id="maxLevelInput" min="1" max="100" value="100" oninput="updateLevelRange()">
+<br><br>
+            <span class="Pagina_actual" id="currentPage"></span>
+<br>
+<button id="prevPage">
+    <img id="prevPageImg" src="data/img/bg/botonanterior.png" alt="Anterior" style="width: 32px; height: 32px;">
+</button>
+<button id="nextPage">
+    <img id="nextPageImg" src="data/img/bg/botonsiguiente.png" alt="Siguiente" style="width: 32px; height: 32px;">
+</button>
+            <br>
+    </div>
+            <table id="itemTable">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Level</th>
+                        <th>Place</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+    <script>
+
+
+
+
+    let currentPage = 1;
+    let rowsPerPage = 20;
+    let data = [];
+    let filteredData = [];
+    let questsData = [];
+    let itemsData = []; // Define itemsData como variable global
+
+
+
+window.onload = function() {
+    const canvas = document.getElementById('canvasLogo');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'data/interface/icon/logo.png';  // Ruta de tu imagen
+
+    img.onload = function() {
+        // Establecer el tamaño del canvas para que coincida con el tamaño de la imagen
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Dibuja la imagen en el canvas cuando esté cargada
+        drawImageOnCanvas(img);
+
+        // Luego aplicar el efecto de brillo
+        applyShine();
+    };
+
+    // Función para dibujar la imagen en el canvas
+    function drawImageOnCanvas(image) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);  // Dibuja la imagen en el canvas
+    }
+
+    // Función para aplicar el brillo dorado encima de la imagen
+    function applyShine() {
+        let offset = canvas.width;  // Comienza el brillo desde fuera del canvas por la derecha
+
+        function draw() {
+            // Redibuja la imagen sobre el canvas para mantenerla visible
+            drawImageOnCanvas(img);
+
+            // Crear un gradiente de brillo dorado (estilo oro) más estrecho
+            const shineWidth = 150;  // Puedes cambiar este valor para hacer el brillo más pequeño o más grande
+            const gradient = ctx.createLinearGradient(offset, 0, offset - shineWidth, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');    // Transparente
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');  // Brillo dorado
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');    // Transparente
+
+            // Crear un nuevo canvas de máscara para aplicar solo donde la imagen es visible
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+
+            // Dibuja la imagen sobre el maskCanvas
+            maskCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Extraemos la imagen como una máscara, donde lo blanco (opaco) permitirá ver el brillo
+            maskCtx.globalCompositeOperation = 'destination-in';  // Mantener la parte visible de la imagen
+            maskCtx.fillStyle = 'white';  // Definir lo que queremos mantener (la parte opaca de la imagen)
+            maskCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar el brillo sobre la imagen usando la máscara
+            ctx.globalCompositeOperation = 'source-over';  // Asegurarnos de que no se sobrescriba el brillo
+            ctx.drawImage(maskCanvas, 0, 0);  // Aplica la máscara sobre la imagen
+
+            // Usar el gradiente como una capa de brillo sobre la imagen
+            ctx.globalCompositeOperation = 'source-atop';  // Usamos 'source-atop' para que el brillo solo afecte las áreas visibles de la imagen
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restaurar el comportamiento normal de dibujo después de aplicar el brillo
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Mover el brillo hacia la izquierda con la velocidad ajustada
+            offset -= 17;  // Velocidad de 17 como pediste
+
+            // Cuando el brillo haya pasado por completo, reiniciar su posición
+            if (offset < -canvas.width) {
+                offset = canvas.width;
+            }
+
+            // Llamar a la función recursivamente para mantener el brillo en movimiento
+            requestAnimationFrame(draw);
+        }
+
+        // Iniciar la animación de brillo
+        draw();
+
+       fetch('questsdb.xlsx')
+            .then(response => response.arrayBuffer())
+            .then(fileData => {
+                const workbook = XLSX.read(fileData, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                questsData = XLSX.utils.sheet_to_json(worksheet);
+                loadItemsDB();
+            });
+    };
+
+    function loadItemsDB() {
+        fetch('itemsdb.xlsx')
+            .then(response => response.arrayBuffer())
+            .then(fileData => {
+                const workbook = XLSX.read(fileData, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                itemsData = XLSX.utils.sheet_to_json(worksheet); // Asigna a itemsData sin 'const'
+                processQuestsData(itemsData);
+            });
+    }
+}
+
+
+function processQuestsData(itemsData) {
+    data = questsData.map((quest) => {
+        const objectives = quest['Objectives'] || 'N/A';
+
+        // Divide el texto en la columna "Objectives" en diferentes líneas
+        const formattedObjectives = objectives.split('- ')
+            .map(obj => obj.trim()) // elimina los espacios en blanco antes y después de cada objetivo
+            .filter(obj => obj !== '') // elimina entradas vacías
+            .map(obj => `<li>${obj}</li>`)
+            .join('');
+
+        // Modificar la descripción para añadir líneas nuevas con el formato deseado
+        const description = quest['Description'] || 'N/A';
+        const formattedDescription = description
+            .replace(/(Starts in |Ends in )/g, '<br> - $1'); // Añade un salto de línea y un guion antes de "Starts in" o "Ends in"
+
+        return {
+            QuestName: quest['Quest Name'] || 'N/A',
+            Description: formattedDescription, // Actualiza aquí
+            Objectives: `<ul class="objetivos" style="color: #4b4642;text-shadow: none;font-weight: bold;">${formattedObjectives}</ul>`, // Coloca los objetivos formateados como lista
+            Level: quest['Level'] || 'N/A',
+            Category: quest['Category'] || 'N/A',
+            Type: quest['Type'] || 'N/A',
+            Rarity: quest['Rarity'] || 'N/A',
+            Minimap1: quest['Minimap 1'] || '',
+            Minimap2: quest['Minimap 2'] || '',
+            Minimap3: quest['Minimap 3'] || '',
+            Minimap4: quest['Minimap 4'] || '',
+            RewardMoney: quest['Reward Money'] || '0',
+            RewardExperience: quest['Reward Experience'] || '0',
+            RewardItem1: quest['Rewards Items 1'] || '',
+            RewardItem2: quest['Rewards Items 2'] || '',
+            RewardItem3: quest['Rewards Items 3'] || '',
+            RewardItem4: quest['Rewards Items 5'] || '',
+            RewardItem5: quest['Rewards Items 4'] || '',
+            RewardItem1ID: quest['Rewards Items 1 ID'] || '',
+            RewardItem2ID: quest['Rewards Items 2 ID'] || '',
+            RewardItem3ID: quest['Rewards Items 3 ID'] || '',
+            RewardItem4ID: quest['Rewards Items 5 ID'] || '',
+            RewardItem5ID: quest['Rewards Items 4 ID'] || '',
+
+        };
+    });
+    filteredData = data.slice();
+    renderTable();
+    populateTypeFilter();
+}
+
+function renderTable() {
+    const tableBody = document.querySelector("#itemTable tbody");
+    tableBody.innerHTML = "";
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const paginatedData = filteredData.slice(start, end);
+
+    paginatedData.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = 
+            `<td class="itemname">${item.QuestName}</td>` + // Usa + para concatenar
+            `<td>${item.Level}</td>` +
+            `<td>${item.Category}</td>`; // Asegúrate de concatenar aquí también
+        row.addEventListener("mouseenter", () => showInfo(item));
+        row.addEventListener("click", () => selectRow(row));
+        tableBody.appendChild(row);
+    });
+
+    updatePagination();
+}
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            document.getElementById("currentPage").innerText = `Página ${currentPage} de ${totalPages}`;
+
+            document.getElementById("prevPage").disabled = currentPage === 1;
+            document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+function showInfo(item) {
+    const infoPane = document.getElementById("itemInfo");
+
+
+    let content = 
+        `<h2 class="questnamerareza" style="color: ${getQuestTypeColor(item.Type)}">${item.QuestName}</h2>` +
+        `<p class="descripciontexto">${item.Description}</p>` +
+        `${item.Objectives}` +  // Asegúrate de que esto esté concatenado correctamente
+        `<div class="minimaps" style="text-align: -webkit-center;">` +
+            `<img style="border-radius:20px;padding: 2px;" src="${item.Minimap1}" width="200" />` +
+            `<img style="border-radius:20px;padding: 2px;" src="${item.Minimap2}" width="200" />` +
+            `<img style="border-radius:20px;padding: 2px;" src="${item.Minimap3}" width="200" />` +
+            `<img style="border-radius:20px;padding: 2px;" src="${item.Minimap4}" width="200" />` +
+        `</div>` +
+        `<p class="recompensa"><strong>Reward:</strong></p>` + 
+        `<p class="rewardtext"><strong>You will receive the following rewards:</strong></p>` + 
+        `<div class="rewardmoney" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="data/img/icons/amount.png">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">AMOUNT</p>` +    
+                `<p class="info">${item.RewardMoney}</p>` + 
+            `</div>` +
+        `</div>` +
+        `<div class="experience" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="data/img/icons/experience.png">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">EXP</p>` +
+                `<p class="info">${item.RewardExperience} EXP</p>` +
+            `</div>` +
+        `</div>`;
+
+
+    const rewardItems = [];
+
+    if (item.RewardItem1ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem1ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem1}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+    if (item.RewardItem2ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem2ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem2}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+
+    if (item.RewardItem3ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem3ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem3}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+
+    if (item.RewardItem4ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem4ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem4}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+
+    if (item.RewardItem5ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem5ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem5}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+    // Puedes repetir para RewardItem3, RewardItem4 y RewardItem5 si es necesario.
+
+    // Solo añade los Reward Items si hay alguno
+    if (rewardItems.length > 0) {
+        content += `<div class="rewards">` + rewardItems.join('') + `</div>`;
+    }
+
+    // Actualiza el contenido del infoPane
+    infoPane.innerHTML = content;
+}
+
+    function getQuestTypeColor(type) {
+        const questColors = {
+            "Daily": "#7dc96f",
+            "Supplement": "#ffba37",
+            "Repeat": "#d5bb2e",
+            "Main": "#31a8ff",
+            "": "#FFFFFF" // Blanco para tipo vacío
+        };
+        
+        // Devuelve el color basado en el tipo o blanco si no hay coincidencia
+        return questColors[type] || '#FFFFFF';
+    }
+        function hideInfo() {
+            document.getElementById("itemInfo").innerHTML = 
+                `<p>Pasa el mouse sobre un ítem o selecciona uno para ver los detalles aquí.</p>`
+            ;
+        }
+
+        function selectRow(row) {
+            const rows = document.querySelectorAll("#itemTable tbody tr");
+            rows.forEach(r => r.classList.remove("selected"));
+            row.classList.add("selected");
+        }
+
+        function populateTypeFilter() {
+            const typeFilter = document.getElementById("typeFilter");
+            const types = [...new Set(data.map(item => item.Type))];
+            types.forEach(type => {
+                const option = document.createElement("option");
+                option.value = type;
+                option.innerText = type;
+                typeFilter.appendChild(option);
+            });
+        }
+
+
+
+
+
+
+        document.getElementById("itemsPerPage").addEventListener("change", (event) => {
+            rowsPerPage = parseInt(event.target.value);
+            currentPage = 1; 
+            renderTable();
+        });
+
+        document.getElementById("searchInput").addEventListener("input", (event) => {
+            const query = event.target.value.toLowerCase();
+            filteredData = data.filter(item => item.QuestName.toLowerCase().includes(query));
+            currentPage = 1;
+            renderTable();
+        });
+
+        document.getElementById("typeFilter").addEventListener("change", (event) => {
+            const selectedType = event.target.value;
+            if (selectedType) {
+                filteredData = data.filter(item => item.Type === selectedType);
+            } else {
+                filteredData = data.slice();
+            }
+            currentPage = 1;
+            renderTable();
+        });
+
+        document.getElementById("prevPage").addEventListener("click", () => {
+            if (currentPage > 1) currentPage--;
+            renderTable();
+        });
+
+        document.getElementById("nextPage").addEventListener("click", () => {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) currentPage++;
+            renderTable();
+        });
+function updateLevelRange() {
+    const minLevel = parseInt(document.getElementById("minLevelInput").value, 10);
+    const maxLevel = parseInt(document.getElementById("maxLevelInput").value, 10);
+    
+    // Asegurarse de que minLevel no sea mayor que maxLevel y viceversa
+    if (minLevel > maxLevel) {
+        document.getElementById("minLevelInput").value = maxLevel;
+    } else if (maxLevel < minLevel) {
+        document.getElementById("maxLevelInput").value = minLevel;
+    }
+
+    // Filtrar los datos según el rango de niveles seleccionado
+    filteredData = data.filter(item => item.Level >= minLevel && item.Level <= maxLevel);
+    renderTable();
+}
+
+
+
+
+
+    </script>
+</body>
+</html>
