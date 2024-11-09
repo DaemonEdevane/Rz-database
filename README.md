@@ -1,1 +1,1 @@
-# Daemon-s
+Just a little sneak peek of a page that i'm developing for hobby, for this version i only used some xlsx files, since i'm still retrieving data, images, description, etc from the original game and then i will need to clean them all, i didn't used yet any sql database or anything xD
