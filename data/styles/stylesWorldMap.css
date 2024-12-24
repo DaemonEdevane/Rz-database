@@ -1,0 +1,516 @@
+        body {
+            font-family: Arial, sans-serif;
+            background: url(/Rz-database/data/img/bg/background.jpg) no-repeat;
+	    background-color: black;
+	    background-position-x: center;
+        }
+
+canvas#canvasLogo {
+    place-self: center;
+    display: block;
+    width: 100%;
+}
+
+@font-face {
+    font-family: 'Raiderz';
+    src: url('data/fonts/raiderz.woff2') format('woff2'), /* formato para navegadores modernos */
+         url('data/fonts/raiderz.woff') format('woff'),   /* formato alternativo */
+         url('data/fonts/raiderz.ttf') format('truetype'); /* formato truetype */
+    font-weight: normal;
+    font-style: normal;
+}
+
+.modelo3d {
+    margin-top: 70px;
+}
+
+#monstaimage {
+    width: 468px; /* Ajusta según el tamaño que necesites */
+    height: 259px; /* Ajusta según el tamaño que necesites */
+}
+
+
+table#infoTable {
+    width: 390px;
+    margin-left: 5px;
+}
+
+.cantidad {
+    border: 3px solid;
+    border-color: #a58154;
+    margin-bottom: 7px;
+    border-radius: 15px;
+    background: black;
+    color: #f5d086;
+    font-family: RAIDERZ;
+    text-transform: uppercase;
+    justify-items: center;
+    padding-top: 10px;
+    font-weight: bold;
+    width: 390px;
+}
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .pagination select {
+            margin-left: 10px;
+            padding: 5px;
+        }
+
+
+#infoPanel {
+    width: 708px;
+    padding: 20px;
+    color: white;
+    scrollbar-width: none;
+    position: fixed; /* Cambia fixed a absolute */
+    left: 0px;
+    top: 190px;
+    height: -webkit-fill-available;
+    background: url(/Rz-database/data/img/bg/box.png) no-repeat;
+    object-fit: fill;
+background-position-x: 9px;
+    background-position-y: 20px;
+}
+
+div#paginationControls {
+    width: 100%;
+    margin-left: 160px;
+}
+
+img#iconnpc {
+    width: 110px;
+    object-fit: none;
+    height: 120px;
+    object-position: top;
+}
+
+td.monster-name {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.monstaname {
+    align-content: center;
+    padding: 10px;
+}
+
+label#montruosname {
+    background-image: url(/Rz-database/data/img/bg/modelname.png);
+    background-repeat: no-repeat;
+    height: 69px;
+    margin-bottom: -30px;
+    z-index: 5;
+    position: fixed;
+    align-content: center;
+    /* background-position-x: 48px; */
+    font-weight: bold;
+    text-transform: uppercase;
+    font-family: Raiderz;
+    font-size: larger;
+    margin-top: -82px;
+    margin-left: 34px;
+    text-anchor: middle;
+    text-align: center;
+    background-position-x: -1px;
+    text-align: center;
+    width: 263px;
+}
+
+canvas#renderCanvas {
+    background-image: url(/Rz-database/data/img/bg/modelbox.png);
+    background-repeat: no-repeat;
+    background-position-y: -3px;
+    background-position-x: 109px;
+    background-size: 61% 95.8%;
+}
+
+.Dropsy {
+    margin-top: -788px;
+    margin-left: 312px;
+    background-image: url(/Rz-database/data/img/bg/drop.png);
+    background-repeat: no-repeat;
+    background-position-x: 46px;
+    background-size: 76% 100.8%;
+    height: 770px;
+}
+
+div#itemInfo img {
+    max-width: 100%; /* Asegura que las imágenes no se desborden */
+    height: auto; /* Mantiene la proporción */
+font-family: 'Raiderz';
+}
+        .logo {
+            width: 20%;
+
+        }
+
+div#menu {
+display: flex;
+}
+        img.imglogo {
+            margin: 10px auto;
+            height: 140px;
+            padding-left: 40%;
+            padding-right: 30%;
+        }
+
+        /* Estilo del menú de navegación */
+        .nav-menu {
+            width: 100%;
+            padding: 10px 0;
+            text-align: start;
+	    align-content: center;
+            margin-top: 20px;
+        }
+
+.Iteminfo img {
+    width: 100%; /* La imagen ocupa el 100% del ancho del contenedor */
+    height: auto; /* Mantiene la relación de aspecto */
+}
+
+.nav-menu a {
+    text-decoration: none;
+    color: white;
+    background-image: url(/Rz-database/data/img/bg/borderback.png);
+    border: 10px solid transparent;
+    border-image: url(/Rz-database/data/img/bg/border.png) 20% round;
+    background-origin: border-box;
+}
+
+
+
+        .nav-menu a:hover {
+	background-blend-mode: soft-light;
+        }
+
+.valortabla {
+    color: #60aa50;
+}
+
+        /* Otros estilos */
+
+
+
+        span.itemname {
+            vertical-align: top;
+            font-size: large;
+            text-transform: capitalize;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        p.rareza {
+            text-align: right;
+        }
+
+        div#ventanadeinfo {
+            display: flex;
+            margin-top: 120px;
+            padding: 0;
+	    position: absolute;
+        }
+
+        #contentPane {
+            width: 60%;
+            padding-left: 680px;
+            margin-top: 40px;
+            text-align-last: center;
+        }
+
+.BasicInfo {
+    margin-top: 203px;
+    background-repeat: no-repeat;
+    border: 43px solid transparent;
+    width: 259px;
+    background-image: url(/Rz-database/data/img/bg/modelbox.png);
+    background-repeat: no-repeat;
+    background-position-x: -45px;
+    background-position-y: -47px;
+    background-size: 134% 131%;
+    height: fit-content;
+}
+
+        td:hover {
+            background: #858585bf;
+        }
+
+        td.selected {
+            background: white;
+            color: black;
+        }
+
+td {
+    color: white;
+    font-weight: bold;
+    text-align-last: center;
+    height: 28px;
+    background: #000000d9;
+    border: 1px solid;
+    border-color: #a58154;
+}
+
+canvas#mapCanvas {
+    border: 3px solid;
+    border-color: #a5815466;
+    border-radius: 10px;
+}
+
+        #itemTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        label.itemperpage {
+            color: wheat;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        #itemTable th, #itemTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        button:disabled {
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        button {
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        input#searchInput {
+            background: lightgrey;
+            border-radius: 10px;
+            font-weight: bolder;
+            color: black;
+            text-align: center;
+        }
+
+        select {
+            border-radius: 10px;
+            background: burlywood;
+            color: black;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+
+#infoTable th {
+    background-color: #a58154;
+    text-align: center;
+    color: white;
+    border-color: #604b31;
+}
+
+        label.Filtro {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        span#currentPage {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        .info-content img {
+            border-color: rgb(96 75 49);
+            border-radius: 10px;
+            border-style: ridge;
+        }
+
+        .separador {
+            display: flex;
+        }
+div#itemInfo{
+padding-top: 40px;
+background-position-x: center;
+border-radius: 20px;
+    text-shadow: 0 0 13px black;
+}
+
+.experience {
+    display: flex;
+    align-items: center;
+    border-color: #604b31;
+}
+
+.rewardmoney {
+    display: flex;
+    align-items: center;
+    border-color: #604b31;
+}
+
+p.info {
+    align-self: self-start;
+    padding-left: 20px;
+    margin: 0px;
+}
+
+.rewardsitems {
+    display: flex;
+    align-items: center;
+    border-color: #604b31;
+}
+
+.TitleEXP {
+    color: #4b4642;
+    font-weight: bolder;
+    text-shadow: none;
+    font-family: system-ui;
+    border: ridge;
+    border-color: #4b4642;
+    padding: 11px;
+    width: 420px;
+}
+
+img.iconsimg {
+    border: ridge;
+    border-color: #4b4642;
+}
+
+p.recompensa {
+    font-size: x-large;
+    color: #fce7d4;
+    text-shadow: 0 0 4px black;
+}
+
+p.rewardtext {
+    text-shadow: none;
+    color: #4b4642;
+}
+
+p.descripciontexto {
+    color: #4b4642;
+    text-shadow: none;
+    font-weight: bold;
+}
+
+h2.questnamerareza {
+    font-size: 26px;
+}
+
+input#minLevelInput {
+    background: lightgrey;
+    border-radius: 10px;
+    font-weight: bolder;
+    color: black;
+    text-align: center;
+}
+
+button#prevPage {
+    border: none;
+    background: none;
+}
+
+button#nextPage {
+    border: none;
+    background: none;
+}
+
+input#maxLevelInput {
+    background: lightgrey;
+    border-radius: 10px;
+    font-weight: bolder;
+    color: black;
+    text-align: center;
+}
+
+button#prevPage :hover {
+    content: url(/Rz-database/data/img/bg/botonanteriorseleccionado.png);
+}
+
+button#nextPage :hover {
+    content: url(/Rz-database/data/img/bg/botonsiguienteseleccionado.png);
+}
+
+
+ul.dropslists {
+    font-size: small;
+    padding-top: 18px;
+}
+
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: left;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+}
+
+h4.DropTitle {
+    margin-top: 0px;
+    font-size: x-large;
+    width: 240px;
+    text-align-last: center;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    position: fixed;
+    top: 130px;
+    background-image: url(/Rz-database/data/img/bg/modelname.png);
+    background-repeat: no-repeat;
+    background-position-x: 14px;
+    background-position-y: 1px;
+    background-size: 89% 97%;
+    margin-left: 28px;
+}
+
+li {
+    list-style: inside;
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.infomonster {
+    width: 570px;
+    padding: 20px;
+    background: #00000000;
+    overflow-y: auto;
+    color: white;
+    border-radius: 40px;
+    border-color: rgb(96 75 49 / 0%);
+    border-style: solid;
+    display: flex;
+margin-left: -25px;
+}
+
+
+.DropsAndInfo {
+    color: white;
+    overflow-y: auto;
+    height: 739px;
+    object-position: top;
+    overflow-y: auto;
+    top: -9px;
+    position: absolute;
+    max-width: 270px;
+    font-size: 11px;
+}
+
+

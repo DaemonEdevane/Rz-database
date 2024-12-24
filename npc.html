@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <style>
+        /* Mantén tus estilos CSS aquí como estaban */
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: center;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+    margin-left: 170px;
+}
+    </style>
+    <link rel="stylesheet" href="data/styles/stylesNPC.css">
+</head>
+<body>
+<div id="menu">
+    <div class="logo">
+        <canvas class="imglogo" id="canvasLogo" style="place-self: center; display: block; width: 100%;" alt="Logo" width="900" height="360"></canvas>
+    </div>
+    <div class="nav-menu">
+        <a href="index.html">Items</a>
+        <a href="quests.html">Quests</a>
+        <a href="npc.html">NPC</a>
+        <a href="monsters.html">Monsters</a>
+        <a href="worldmap.html">Worldmap</a>
+</div>
+</div>
+
+    <div class="flexmenu">
+       
+<div id="ladoizquierdo">
+ <div id="ventanadeinfo">
+		<div class="monstaimage" id="monstaimage">
+		</div>
+            <div id="infoPanel" style="top: 190px;">
+                <div id="itemInfo" style="width: 88%;border-radius: 20px;height: 100%;text-shadow: 0 0 13px black;padding-left: 30px;">
+                </div>
+
+            </div>
+	<div id="dropsw">
+
+    	</div>
+        </div>
+</div>
+        <div id="contentPane">
+            <div class="Filtros">
+                <label class="itemperpage" for="itemsPerPage">Items por página:</label>
+                <select id="itemsPerPage">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+                <br><br>
+                <input type="text" id="searchInput" placeholder="Buscar...">
+                <br><br>
+                <label for="typeFilter" class="Filtro">Filtrar por Tipo:</label>
+                <select id="typeFilter">
+                    <option value="">Todos</option>
+                </select>
+                <br><br>
+                <label for="minLevelInput" class="Filtro">Filtrar por Nivel:</label>
+                De: <input type="number" id="minLevelInput" min="1" max="100" value="1" oninput="updateLevelRange()">
+                Hasta: <input type="number" id="maxLevelInput" min="1" max="50" value="50" oninput="updateLevelRange()">
+                <br><br>
+                <span class="Pagina_actual" id="currentPage"></span>
+<br>
+<button id="prevPage">
+    <img id="prevPageImg" src="data/img/bg/botonanterior.png" alt="Anterior" style="width: 32px; height: 32px;">
+</button>
+<button id="nextPage">
+    <img id="nextPageImg" src="data/img/bg/botonsiguiente.png" alt="Siguiente" style="width: 32px; height: 32px;">
+</button>
+                <br>
+            </div>
+            <table id="itemTable" style="width: 60%; place-self: center;">
+                <thead>
+                    <tr>
+                        <th>NPC</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let data = [];
+        let filteredData = [];
+
+window.onload = function() {
+    const canvas = document.getElementById('canvasLogo');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'data/interface/icon/logo.png';  // Ruta de tu imagen
+
+    img.onload = function() {
+        // Establecer el tamaño del canvas para que coincida con el tamaño de la imagen
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Dibuja la imagen en el canvas cuando esté cargada
+        drawImageOnCanvas(img);
+
+        // Luego aplicar el efecto de brillo
+        applyShine();
+    };
+
+    // Función para dibujar la imagen en el canvas
+    function drawImageOnCanvas(image) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);  // Dibuja la imagen en el canvas
+    }
+
+    // Función para aplicar el brillo dorado encima de la imagen
+    function applyShine() {
+        let offset = canvas.width;  // Comienza el brillo desde fuera del canvas por la derecha
+
+        function draw() {
+            // Redibuja la imagen sobre el canvas para mantenerla visible
+            drawImageOnCanvas(img);
+
+            // Crear un gradiente de brillo dorado (estilo oro) más estrecho
+            const shineWidth = 150;  // Puedes cambiar este valor para hacer el brillo más pequeño o más grande
+            const gradient = ctx.createLinearGradient(offset, 0, offset - shineWidth, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');    // Transparente
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');  // Brillo dorado
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');    // Transparente
+
+            // Crear un nuevo canvas de máscara para aplicar solo donde la imagen es visible
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+
+            // Dibuja la imagen sobre el maskCanvas
+            maskCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Extraemos la imagen como una máscara, donde lo blanco (opaco) permitirá ver el brillo
+            maskCtx.globalCompositeOperation = 'destination-in';  // Mantener la parte visible de la imagen
+            maskCtx.fillStyle = 'white';  // Definir lo que queremos mantener (la parte opaca de la imagen)
+            maskCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar el brillo sobre la imagen usando la máscara
+            ctx.globalCompositeOperation = 'source-over';  // Asegurarnos de que no se sobrescriba el brillo
+            ctx.drawImage(maskCanvas, 0, 0);  // Aplica la máscara sobre la imagen
+
+            // Usar el gradiente como una capa de brillo sobre la imagen
+            ctx.globalCompositeOperation = 'source-atop';  // Usamos 'source-atop' para que el brillo solo afecte las áreas visibles de la imagen
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restaurar el comportamiento normal de dibujo después de aplicar el brillo
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Mover el brillo hacia la izquierda con la velocidad ajustada
+            offset -= 17;  // Velocidad de 17 como pediste
+
+            // Cuando el brillo haya pasado por completo, reiniciar su posición
+            if (offset < -canvas.width) {
+                offset = canvas.width;
+            }
+
+            // Llamar a la función recursivamente para mantener el brillo en movimiento
+            requestAnimationFrame(draw);
+        }
+
+        // Iniciar la animación de brillo
+        draw();
+
+fetch('data/xlsx/npcdb.xlsx')
+                .then(response => response.arrayBuffer())
+                .then(fileData => {
+                    const workbook = XLSX.read(fileData, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const monstersData = XLSX.utils.sheet_to_json(worksheet);
+                    processMonstersData(monstersData);
+                });
+    }
+}
+
+    function processMonstersData(monstersData) {
+        data = monstersData.map((monster) => ({
+            Name: monster['Name'] || 'N/A',
+            Level: monster['Level'] || 'N/A',
+            Type: monster['Type'] || 'N/A',
+            Rarity: monster['Rarity'] || 'N/A',
+            Link: monster['Link'] || 'N/A',
+            Hp: monster['Hp'] || 'N/A',
+            Armor: monster['Armor'] || 'N/A',
+            MagicArmor: monster['Magic Armor'] || 'N/A',
+            Damage: monster['Damage'] || 'N/A',
+            MagicDamage: monster['Magic Damage'] || 'N/A',
+            Clan: monster['Clan'] || 'N/A',
+            Zone1: monster['Zone 1'] || 'N/A',
+            SubZone: monster['Sub Zone'] || 'N/A',
+            MonsterIMG: monster['NPCIMG'] || '', // Nueva columna para la imagen
+            Drops: Array.from({ length: 42 }, (_, i) => ({
+                Drop: monster[`Drop ${i + 1}`] || 'N/A',
+                DropPercentage: monster[`Drop Percentage ${i + 1}`] || 'N/A',
+                Img: monster[`Img ${i + 1}`] || ''
+            }))
+        }));
+
+        filteredData = data.slice();
+        renderTable();
+        populateTypeFilter();
+    }
+
+        function replaceAsterisks(text) {
+            return text.replace(/\*/g, "'"); // Reemplaza asteriscos por comillas simples
+        }
+
+function renderTable() {
+    const tableBody = document.querySelector('#itemTable tbody');
+    tableBody.innerHTML = '';
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const itemsToDisplay = filteredData.slice(start, end);
+
+    itemsToDisplay.forEach(monster => {
+        const row = document.createElement('tr');
+ 	const imageSrc = monster.MonsterIMG || 'data/img/npc/unknown.png';
+        row.innerHTML = `
+            <td class="monster-name" data-monster='${JSON.stringify(monster).replace(/'/g, "&apos;")}'> 
+                <img src="${imageSrc}" id="iconnpc">
+                <div class="monstaname">${replaceAsterisks(monster.Name)}</div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+    updatePagination();
+
+    const prevPageImg = document.getElementById('prevPageImg');
+    const nextPageImg = document.getElementById('nextPageImg');
+
+    if (currentPage === 1) {
+        prevPageImg.src = "data/img/bg/botonanterior.png";
+        document.getElementById('prevPage').disabled = true;
+        document.getElementById('prevPage').style = true;
+    } else {
+        prevPageImg.src = "data/img/bg/botonanterior.png";
+        document.getElementById('prevPage').disabled = false;
+    }
+
+    if (currentPage === Math.ceil(filteredData.length / rowsPerPage)) {
+        nextPageImg.src = "data/img/bg/botonsiguiente.png";
+        document.getElementById('nextPage').disabled = true;
+    } else {
+        nextPageImg.src = "data/img/bg/botonsiguiente.png";
+        document.getElementById('nextPage').disabled = false;
+    }
+
+    // Actualizar el texto de currentPage
+    const currentPageElement = document.getElementById('currentPage');
+    if (currentPageElement) {
+        currentPageElement.textContent = `Página ${currentPage} de ${Math.ceil(filteredData.length / rowsPerPage)}`;
+        console.log(`Página actual: ${currentPage}`);  // Verificación en consola
+    } else {
+        console.warn("Elemento con ID 'currentPage' no encontrado en el DOM.");
+    }
+}
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            document.getElementById("currentPage").innerText = `Página ${currentPage} de ${totalPages}`;
+
+            document.getElementById("prevPage").disabled = currentPage === 1;
+            document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+const monsterim = document.getElementById('monstaimage');
+
+function displayMonsterInfo(monster) {
+    const infoPane = document.getElementById('itemInfo');
+    const dropsw = document.getElementById('dropsw');
+    const dropsList = monster.Drops
+        .filter(drop => drop.Drop && drop.Drop !== 'N/A')
+        .map(drop => `
+            <li>
+                ${drop.Img ? `<img src="${drop.Img}" alt="${replaceAsterisks(drop.Drop)}" style="width: 20px; height: 20px;z-index: 1;" />` : ''}
+                ${replaceAsterisks(drop.Drop)}: ${drop.DropPercentage}%
+            </li>
+        `).join('');
+
+    // Mostrar u ocultar dropsw basado en dropsList
+    if (dropsList) {
+        dropsw.style.display = 'block'; // Mostrar
+        dropsw.innerHTML = `
+            <div class="Dropsy">
+                <ul class="dropslists">
+                    <div class="DropsAndInfo">
+            <br>
+              <h4 class="DropTitle">Drops:</h4>
+                        ${dropsList}
+                    </div>
+                </ul>    
+            </div>
+        `;
+    } else {
+        dropsw.style.display = 'none'; // Ocultar si no hay drops
+        dropsw.innerHTML = ''; // Vaciar contenido
+    }
+    // Lógica para el fondo de monsterim
+    if (monster.MonsterIMG) {
+        monsterim.style.backgroundImage = `url('${monster.MonsterIMG}')`;
+        monsterim.style.backgroundRepeat = `no-repeat`;
+        monsterim.style.backgroundSize = `cover`;
+        monsterim.style.position = `fixed`;
+        monsterim.style.zIndex = `2`;
+    } else {
+        monsterim.style.backgroundImage = `url('data/img/npc/npc.png')`;
+        monsterim.style.backgroundRepeat = `no-repeat`;
+        monsterim.style.backgroundSize = `cover`;
+    }
+
+    const clanInfo = monster.Clan && monster.Clan !== 'N/A' ? `<p>Clan: ${replaceAsterisks(monster.Clan)}</p>` : '';
+    const zoneInfo = monster.Zone1 && monster.Zone1 !== 'N/A' ? `<p>Zona: ${monster.Zone1}</p>` : '';
+    const subZoneInfo = monster.SubZone && monster.SubZone !== 'N/A' ? `<p>Sub Zona: ${monster.SubZone}</p>` : '';
+
+    infoPane.innerHTML = `
+        <div class="infomonster">
+        <div class="BasicInfo">
+            <h2>${monster.Name}</h2>
+            <p>Nivel: ${monster.Level}</p>
+            <p>Tipo: ${monster.Type}</p>
+            <p>Rareza: ${monster.Rarity}</p>
+            <p>HP: ${monster.Hp}</p>
+            <p>Armadura: ${monster.Armor}</p>
+            <p>Armadura Mágica: ${monster.MagicArmor}</p>
+            <p>Daño: ${monster.Damage}</p>
+            <p>Daño Mágico: ${monster.MagicDamage}</p>
+            ${clanInfo}
+            ${zoneInfo}
+            ${subZoneInfo}
+        </div>
+        </div>
+    `;
+}
+
+
+
+
+        document.querySelector('#itemTable tbody').addEventListener('mouseover', (event) => {
+            const monsterNameCell = event.target.closest('td.monster-name');
+            if (monsterNameCell) {
+                let monsterData = monsterNameCell.dataset.monster;
+                monsterData = monsterData.replace(/'/g, "\\'");
+
+                try {
+                    const monster = JSON.parse(monsterData);
+                    displayMonsterInfo(monster);
+                } catch (error) {
+                    console.error('Error al parsear los datos del monstruo:', error);
+                }
+            }
+        });
+
+        document.getElementById('itemsPerPage').addEventListener('change', (event) => {
+            rowsPerPage = parseInt(event.target.value, 10);
+            currentPage = 1;
+            renderTable();
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (event) => {
+            const searchTerm = event.target.value.toLowerCase();
+            filteredData = data.filter(monster => 
+                monster.Name.toLowerCase().includes(searchTerm) ||
+                monster.Rarity.toLowerCase().includes(searchTerm) ||
+                monster.Type.toLowerCase().includes(searchTerm)
+            );
+            currentPage = 1;
+                applyFilters();
+        });
+
+document.getElementById("typeFilter").addEventListener("change", (event) => {
+    const selectedRarity = event.target.value;
+    if (selectedRarity) {
+        filteredData = data.filter(monster => monster.Rarity === selectedRarity); // Mantén 'monster'
+    } else {
+        filteredData = data.slice();
+    }
+    currentPage = 1;
+        applyFilters();
+});
+
+        document.getElementById('minLevelInput').addEventListener('input', updateLevelRange);
+        document.getElementById('maxLevelInput').addEventListener('input', updateLevelRange);
+
+        function updateLevelRange() {
+            const minLevel = parseInt(document.getElementById('minLevelInput').value);
+            const maxLevel = parseInt(document.getElementById('maxLevelInput').value);
+            filteredData = data.filter(monster => 
+                monster.Level >= minLevel && monster.Level <= maxLevel
+            );
+            currentPage = 1;
+                applyFilters();
+        }
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const selectedType = document.getElementById("typeFilter").value;
+    const minLevel = parseInt(document.getElementById('minLevelInput').value);
+    const maxLevel = parseInt(document.getElementById('maxLevelInput').value);
+
+    filteredData = data.filter(monster => {
+        const matchesSearch = monster.Name.toLowerCase().includes(searchTerm);
+        const matchesType = selectedType ? monster.Rarity === selectedType : true;
+        const matchesLevel = monster.Level >= minLevel && monster.Level <= maxLevel;
+
+        return matchesSearch && matchesType && matchesLevel;
+    });
+
+    currentPage = 1;
+    renderTable();
+}
+
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+function populateTypeFilter() {
+    const typeFilter = document.getElementById("typeFilter");
+    const raritiesOrder = ['Normal', 'Common', 'Rare', 'Epic']; // Orden específico
+    const rarities = [...new Set(data.map(monster => monster.Rarity))];
+    
+    // Filtra las rarezas según el orden deseado
+    raritiesOrder.forEach(rarity => {
+        if (rarities.includes(rarity)) { // Solo agrega si existe en los datos
+            const option = document.createElement("option");
+            option.value = rarity;
+            option.innerText = rarity;
+            typeFilter.appendChild(option);
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+</html>

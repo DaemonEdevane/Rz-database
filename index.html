@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <style>
+::-webkit-scrollbar {display: none;}
+#infoPane {
+    width: 550px;
+    margin-left: 30px;
+    padding: 20px;
+    background: #000000de;
+    position: sticky;
+    top: 190px;
+    bottom: 0;
+    left: 30px;
+    overflow-y: auto;
+    color: white;
+    border-radius: 40px;
+    border-color: rgb(96 75 49);
+    border-style: solid;
+    scrollbar-width: none;
+    margin-top: -110px;
+}
+
+.valx {
+    margin-bottom: 0px;
+    margin-top: 2px;
+}
+
+.valortabla{
+color: #60aa50;
+}
+        .logo {
+            width: 20%;
+
+        }
+
+        img.imglogo {
+            margin: 10px auto;
+            height: 140px;
+            padding-left: 40%;
+            padding-right: 30%;
+        }
+
+button#prevPage :hover {
+    content: url(data/img/bg/botonanteriorseleccionado.png);
+}
+
+button#nextPage :hover {
+    content: url(data/img/bg/botonsiguienteseleccionado.png);
+}
+
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: left;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+}
+
+        /* Estilo del menú de navegación */
+        .nav-menu {
+            width: 100%;
+            padding: 10px 0;
+            text-align: start;
+	    align-content: center;
+            margin-top: 20px;
+        }
+
+.nav-menu a {
+    text-decoration: none;
+    color: white;
+    background-image: url(data/img/bg/borderback.png);
+    border: 10px solid transparent;
+    border-image: url(data/img/bg/border.png) 20% round;
+    background-origin: border-box;
+}
+
+#menu {
+    display: flex;
+}
+
+        .nav-menu a:hover {
+	background-blend-mode: soft-light;
+        }
+
+        /* Otros estilos */
+        table#itemTable td {
+            text-transform: capitalize;
+            border-color: rgb(96 75 49);
+        }
+
+        span.itemname {
+            vertical-align: top;
+            font-size: large;
+            text-transform: capitalize;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+
+button:disabled {
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+        p.rareza {
+            text-align: right;
+        }
+
+        div#ventanadeinfo {
+            display: flex;
+            margin-top: 120px;
+            padding: 0;
+            position: fixed;
+        }
+
+        #contentPane {
+            width: 60%;
+            padding-left: 680px;
+            margin-top: 40px;
+            text-align-last: center;
+        }
+
+        td:hover {
+            background: #858585bf;
+        }
+
+        td.selected {
+            background: white;
+            color: black;
+        }
+
+        td {
+            border-radius: 20px;
+            background: #000000de;
+            color: white;
+            font-weight: bold;
+            text-align-last: center;
+        }
+
+        #itemTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        label.itemperpage {
+            color: wheat;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        #itemTable th, #itemTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        button:disabled {
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        button {
+    border: none;
+    background: none;
+        }
+
+        input#searchInput {
+            background: lightgrey;
+            border-radius: 10px;
+            font-weight: bolder;
+            color: black;
+            text-align: center;
+        }
+
+        select {
+            border-radius: 10px;
+            background: burlywood;
+            color: black;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        #itemTable th {
+            background-color: #a58154;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            border-color: #604b31;
+        }
+
+        label.Filtro {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        span#currentPage {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        .info-content img {
+            border-color: rgb(96 75 49);
+            border-radius: 10px;
+            border-style: ridge;
+        }
+
+        .separador {
+            display: flex;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: url(data/img/bg/background.jpg) no-repeat;
+	    background-color: black;
+	    background-position-x: center;
+        }
+
+canvas#canvasLogo {
+    place-self: center;
+    display: block;
+    width: 100%;
+}
+    </style>
+</head>
+<body>
+<div id="menu">
+    <div class="logo">
+        <canvas class="imglogo" id="canvasLogo" style="place-self: center; display: block; width: 100%;" alt="Logo" width="900" height="360"></canvas>
+    </div>
+    <div class="nav-menu">
+        <a href="index.html">Items</a>
+        <a href="quests.html">Quests</a>
+        <a href="npc.html">NPC</a>
+        <a href="monsters.html">Monsters</a>
+        <a href="worldmap.html">Worldmap</a>
+</div>
+</div>
+
+    <div class="flexmenu">
+        <div class="separador">
+            <div id="ventanadeinfo">
+                <div id="infoPane">
+                    <div id="itemInfo" style="width: 100%; background: #00000038; border-radius: 20px; height: 100%;">
+                        <p>Pasa el mouse sobre un ítem o selecciona uno para ver los detalles aquí.</p>
+                    </div>
+                </div>
+            </div>
+            <div id="contentPane">
+<div class="Filtros">
+                <label class="itemperpage" for="itemsPerPage">Items por página:</label>
+                <select id="itemsPerPage">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+                <br><br>
+                <input type="text" id="searchInput" placeholder="Buscar...">
+                <br><br>
+                <label for="typeFilter" class="Filtro">Filtrar por Tipo:</label>
+                <select id="typeFilter">
+                    <option value="">Todos</option>
+                    <!-- Las opciones se llenarán dinámicamente -->
+                </select>
+                <br><br>
+                <label for="rarityFilter" class="Filtro">Filtrar por Rareza:</label>
+                <select id="rarityFilter">
+                    <option value="">Todos</option>
+                    <!-- Las opciones se llenarán dinámicamente -->
+                </select>
+                <br><br>
+                <span class="Pagina_actual" id="currentPage"></span>
+<br>
+<button id="prevPage"> 
+    <img src="data/img/bg/botonanterior.png" alt="Anterior" style="width: 32px; height: 32px;">
+</button>
+
+<button id="nextPage">
+    <img src="data/img/bg/botonsiguiente.png" alt="Siguiente" style="width: 32px; height: 32px;">
+</button>
+</div>
+                <br>
+
+                <table id="itemTable">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Type</th>
+                            <th>Rarity</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+let itemData = [];
+let filteredData = [];
+let currentPage = 1;
+let itemsPerPage = 20;
+
+
+// Load the Excel file
+fetch('data/xlsx/itemsdb.xlsx') // Cambia esta ruta por tu archivo .xlsx
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar el archivo: ' + response.statusText);
+        }
+        return response.arrayBuffer();
+    })
+    .then(data => {
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        itemData = XLSX.utils.sheet_to_json(worksheet);
+        filteredData = itemData; // Inicializamos filteredData con todos los datos
+        populateTypeFilter(); // Llenar el filtro de tipo
+        populateRarityFilter(); // Llenar el filtro de tipo
+        updateTable();
+    })
+    .catch(error => {
+        console.error(error);
+        alert('Error al cargar los datos: ' + error.message);
+    });
+
+// Apply filters based on user selection
+function applyFilters() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase();
+    const typeValue = document.getElementById('typeFilter').value;
+    const rarityValue = document.getElementById('rarityFilter').value;
+
+    filteredData = itemData.filter(item => {
+        // Comprobar si el tipo coincide con el filtro seleccionado
+        const matchesType = typeValue === '' || item['type'].toLowerCase() === typeValue.toLowerCase();
+
+        // Comprobar si el tipo coincide con el filtro seleccionado
+	const matchesRarity = rarityValue === '' || (item['rarity'] && item['rarity'].toLowerCase() === rarityValue.toLowerCase());
+
+
+        // Comprobar si el término de búsqueda está presente en alguna columna
+        const matchesSearch = Object.values(item).some(value => 
+            value && value.toString().toLowerCase().includes(searchValue)
+        );
+
+        // Retornar solo los ítems que cumplan ambas condiciones
+        return matchesType && matchesSearch && matchesRarity;
+    });
+
+    currentPage = 1;
+    updateTable();
+}
+
+// Populate the type filter with unique types
+function populateTypeFilter() {
+    const typeFilter = document.getElementById('typeFilter');
+    const uniqueTypes = [...new Set(itemData.map(item => item['type']))];
+
+    uniqueTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        typeFilter.appendChild(option);
+    });
+
+    typeFilter.addEventListener('change', applyFilters); // Aplicar filtros al cambiar el tipo
+}
+
+// Populate the type filter with unique types
+function populateRarityFilter() {
+    const rarityFilter = document.getElementById('rarityFilter');
+    const uniqueRarity = [...new Set(itemData.map(item => item['rarity']))];
+
+    uniqueRarity.forEach(rarity => {
+        const option = document.createElement('option');
+        option.value = rarity;
+        option.textContent = rarity;
+        rarityFilter.appendChild(option);
+    });
+
+    rarityFilter.addEventListener('change', applyFilters); // Aplicar filtros al cambiar el tipo
+}
+
+// Update the table with paginated data
+function updateTable() {
+    const tableBody = document.querySelector('#itemTable tbody');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    tableBody.innerHTML = '';
+
+    filteredData.slice(startIndex, endIndex).forEach(item => {
+        const row = document.createElement('tr');
+        const nameCell = document.createElement('td');
+        const typeCell = document.createElement('td');
+        const rarityCell = document.createElement('td');
+
+        nameCell.style.color = `#${item['texcolor']}`; // Color del texto
+        nameCell.textContent = item['name']; // Nombre del ítem
+        typeCell.textContent = item['type']; // Tipo del ítem
+        rarityCell.style.color = `#${item['texcolor']}`; // Color del texto
+        rarityCell.textContent = item['rarity']; // Rareza del ítem
+
+        row.appendChild(nameCell);
+        row.appendChild(typeCell);
+        row.appendChild(rarityCell);
+
+        // Add mouseover and click event listeners to update info pane
+        row.addEventListener('mouseover', () => {
+            updateInfoPane(item);
+        });
+        
+        row.addEventListener('click', () => {
+            updateInfoPane(item);
+        });
+
+        tableBody.appendChild(row);
+    });
+
+    updatePagination();
+}
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            document.getElementById("currentPage").innerText = `Página ${currentPage} de ${totalPages}`;
+
+            document.getElementById("prevPage").disabled = currentPage === 1;
+            document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+document.getElementById('itemsPerPage').addEventListener('change', (event) => {
+    itemsPerPage = parseInt(event.target.value);
+    currentPage = 1;
+    updateTable();
+});
+
+function updateInfoPane(item) {
+    const infoPane = document.getElementById('itemInfo');
+
+    let totalStats = '<br><p class="valx"><strong>Total stats:</strong></p>';
+    let attributes = '';
+
+    const attributesMap = {
+        'Vitality': item['vitality'],
+        'Magic Defense': item['magic defense'],
+        'Physical Defense': item['physical defense'],
+        'Max EP': item['max EP'],
+        'Strenght': item['strenght'],
+        'Agility': item['agility'],
+        'Intelligence': item['intelligence'],
+        'Max HP': item['max HP'],
+        'Speed': item['speed'],
+        'Charm': item['charm'],
+        'Max SP': item['max SP'],
+        'Natural Energy Recovery': item['natural energy recovery'],
+        'Natural Health Recovery': item['natural health recovery'],
+        'Natural Stamina Recovery': item['natural stamina recovery'],
+        'Lighting Resistance': item['lighting resistance']
+    };
+
+    let hasStats = false;
+    for (const [key, value] of Object.entries(attributesMap)) {
+        if (value) {
+            hasStats = true;
+            const formattedValue = value > 0 ? `+${value}` : `${value}`;
+            attributes += `<p class="valx"><strong>${key}</strong> <strong class="valortabla"> ${formattedValue}</strong></p>`;
+        }
+    }
+
+
+    // Agregar la información adicional de las nuevas columnas
+    let additionalInfo = '';
+
+// Mostrar daño como rango si ambos min_damage y max_damage están presentes
+if (item['min_damage'] && item['max_damage']) {
+    additionalInfo += `<p class="valx"><strong>P.Atk </strong> <strong class="valortabla"> ${item['min_damage']} ~ ${item['max_damage']}</strong></p>`;
+} else {
+    if (item['min_damage']) additionalInfo += `<p class="valx"><strong>Min Damage:</strong> <strong class="valortabla"> ${item['min_damage']}</strong></p>`;
+    if (item['max_damage']) additionalInfo += `<p class="valx"><strong>Max Damage:</strong> <strong class="valortabla"> ${item['max_damage']}</strong></p>`;
+}   
+
+// Mostrar daño como rango si ambos min_damage y max_damage están presentes
+if (item['magic_min_damage'] && item['magic_max_damage']) {
+    additionalInfo += `<p class="valx"><strong>M.Atk </strong> <strong class="valortabla"> ${item['magic_min_damage']} ~ ${item['magic_max_damage']}</strong></p>`;
+} else {
+    if (item['magic_min_damage']) additionalInfo += `<p class="valx"><strong>Min Damage:</strong> <strong class="valortabla"> ${item['magic_min_damage']}</strong></p>`;
+    if (item['magic_max_damage']) additionalInfo += `<p class="valx"><strong>Max Damage:</strong> <strong class="valortabla"> ${item['magic_max_damage']}</strong></p>`;
+}
+    if (item['sex']) additionalInfo += `<p class="valx"><strong>Gender</strong> <strong class="valortabla"> ${item['sex']}</strong></p>`;
+    if (item['DamageAttrib']) additionalInfo += `<p class="valx"><strong>Damage Attribute:</strong> <strong class="valortabla"> ${item['DamageAttrib']}</strong></p>`;
+    if (item['buying_price']) additionalInfo += `<p class="valx"><strong>Buying Price:</strong><strong class="valortabla"> ${item['buying_price']}</strong></p>`;
+    if (item['selling_price']) additionalInfo += `<p class="valx"><strong>Selling Price:</strong> <strong class="valortabla"> ${item['selling_price']}</strong> </p>`;
+    if (item['max_durability']) additionalInfo += `<p class="valx"><strong>Max Durability:</strong><strong class="valortabla"> ${item['max_durability']}/${item['max_durability']}</strong></p>`;
+    if (item['CostumeItemDyeable'] !== undefined) {
+        additionalInfo += `<p class="valx"><strong>Costume Dyeable:</strong> <strong class="valortabla">${item['CostumeItemDyeable'] ? 'Yes' : 'No'}</strong></p>`;
+    
+
+ 
+   
+
+
+infoPane.innerHTML = `
+    <div class="iconandname" style="display: flex; align-items: center;">
+        <img class="iconimg" src="${item['icon']}" alt="${item['name']}" style="border-radius: 8px; border-color: rgb(96 75 49); border-style: ridge;">
+        <p class="itemname" style="color: #${item['texcolor']}; margin: 0; padding-left: 10px;">${item['name']}</p>
+    </div>
+    <p class="raritytext" style="color: #${item['texcolor']}; margin: 0; text-align: end; padding-right: 10px;">${item['rarity']}</p>
+    <div class="iteminfo" style="display: flex; place-content: center; color: orange; font-weight: bold; text-transform: capitalize;">
+        <p class="typename" style="padding-right: 10px;">${item['type']}</p>
+        <p class="slottype" style="padding-left: 10px;">${item['slot']}</p>
+    </div>
+    <div class="separator" style="border-bottom: inset; border-top: inset; border-radius: 6px; border-color: #fbfafa14;">
+        <br>
+        <p class="description" style="font-weight: bold; text-transform: capitalize; padding-left: 13px;">${item['desc'] || ''}</p>
+        <br>
+    </div>
+    <div class="Stats">
+        ${totalStats}
+        ${additionalInfo}
+    </div>
+`;
+}}
+
+
+
+
+
+// Event listeners for pagination buttons
+document.getElementById('prevPage').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        updateTable();
+    }
+});
+
+document.getElementById('nextPage').addEventListener('click', () => {
+    if (currentPage * itemsPerPage < filteredData.length) {
+        currentPage++;
+        updateTable();
+    }
+});
+
+// Search input event listener
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+window.onload = function() {
+    const canvas = document.getElementById('canvasLogo');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'data/interface/icon/logo.png';  // Ruta de tu imagen
+
+    img.onload = function() {
+        // Establecer el tamaño del canvas para que coincida con el tamaño de la imagen
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Dibuja la imagen en el canvas cuando esté cargada
+        drawImageOnCanvas(img);
+
+        // Luego aplicar el efecto de brillo
+        applyShine();
+    };
+
+    // Función para dibujar la imagen en el canvas
+    function drawImageOnCanvas(image) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);  // Dibuja la imagen en el canvas
+    }
+
+    // Función para aplicar el brillo dorado encima de la imagen
+    function applyShine() {
+        let offset = canvas.width;  // Comienza el brillo desde fuera del canvas por la derecha
+
+        function draw() {
+            // Redibuja la imagen sobre el canvas para mantenerla visible
+            drawImageOnCanvas(img);
+
+            // Crear un gradiente de brillo dorado (estilo oro) más estrecho
+            const shineWidth = 150;  // Puedes cambiar este valor para hacer el brillo más pequeño o más grande
+            const gradient = ctx.createLinearGradient(offset, 0, offset - shineWidth, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');    // Transparente
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');  // Brillo dorado
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');    // Transparente
+
+            // Crear un nuevo canvas de máscara para aplicar solo donde la imagen es visible
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+
+            // Dibuja la imagen sobre el maskCanvas
+            maskCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Extraemos la imagen como una máscara, donde lo blanco (opaco) permitirá ver el brillo
+            maskCtx.globalCompositeOperation = 'destination-in';  // Mantener la parte visible de la imagen
+            maskCtx.fillStyle = 'white';  // Definir lo que queremos mantener (la parte opaca de la imagen)
+            maskCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar el brillo sobre la imagen usando la máscara
+            ctx.globalCompositeOperation = 'source-over';  // Asegurarnos de que no se sobrescriba el brillo
+            ctx.drawImage(maskCanvas, 0, 0);  // Aplica la máscara sobre la imagen
+
+            // Usar el gradiente como una capa de brillo sobre la imagen
+            ctx.globalCompositeOperation = 'source-atop';  // Usamos 'source-atop' para que el brillo solo afecte las áreas visibles de la imagen
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restaurar el comportamiento normal de dibujo después de aplicar el brillo
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Mover el brillo hacia la izquierda con la velocidad ajustada
+            offset -= 17;  // Velocidad de 17 como pediste
+
+            // Cuando el brillo haya pasado por completo, reiniciar su posición
+            if (offset < -canvas.width) {
+                offset = canvas.width;
+            }
+
+            // Llamar a la función recursivamente para mantener el brillo en movimiento
+            requestAnimationFrame(draw);
+        }
+
+        // Iniciar la animación de brillo
+        draw();
+
+    }
+
+function renderTable() {
+    const tableBody = document.querySelector('#itemTable tbody');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    tableBody.innerHTML = '';
+
+    // Ajusta `filteredData` para que coincida con tu estructura de datos
+    filteredData.slice(startIndex, endIndex).forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.Name}</td>
+            <td>${item.Level}</td>
+            <td>${item.Rarity}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    document.getElementById('currentPage').textContent = `Página ${currentPage}`;
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage * itemsPerPage >= filteredData.length;
+}
+
+// Llama a updateTable en lugar de renderTable para actualizar la tabla
+renderTable();
+
+}
+</script>
+</body>
+</html>

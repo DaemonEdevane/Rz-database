@@ -1,0 +1,246 @@
+        body {
+            font-family: Arial, sans-serif;
+            background: url(/Rz-database/data/img/bg/background.jpg) no-repeat;
+	    background-color: black;
+	    background-position-x: center;
+        }
+
+canvas#canvasLogo {
+    place-self: center;
+    display: block;
+    width: 25%;
+}
+
+@font-face {
+    font-family: 'Raiderz';
+    src: url('data/fonts/raiderz.woff2') format('woff2'), /* formato para navegadores modernos */
+         url('data/fonts/raiderz.woff') format('woff'),   /* formato alternativo */
+         url('data/fonts/raiderz.ttf') format('truetype'); /* formato truetype */
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+button#prevPage {
+    border: none;
+    background: none;
+}
+
+button#prevPage :hover {
+    content: url(/Rz-database/data/img/bg/botonanteriorseleccionado.png);
+}
+
+button#nextPage :hover {
+    content: url(/Rz-database/data/img/bg/botonsiguienteseleccionado.png);
+}
+
+button:disabled {
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+button#nextPage {
+    border: none;
+    background: none;
+}
+
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: left;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+}
+
+        #infoPane {
+            width: 400px;
+            margin-left: 90px;
+            padding: 20px;
+            background: #000000de;
+            position: sticky;
+            top: 190px;
+            bottom: 0;
+            left: 30px;
+            overflow-y: auto;
+            color: white;
+            border-radius: 40px;
+            border-color: rgb(96 75 49);
+            border-style: solid;
+            scrollbar-width: none;
+        }
+
+  .logo {
+            width: 20%;
+
+        }
+
+        img.imglogo {
+            margin: 10px auto;
+            height: 140px;
+            padding-left: 40%;
+            padding-right: 30%;
+        }
+
+        /* Estilo del menú de navegación */
+        .nav-menu {
+            width: 100%;
+            padding: 10px 0;
+            text-align: start;
+	    align-content: center;
+            margin-top: 20px;
+        }
+
+#menu {
+    display: flex;
+}
+
+        .nav-menu a {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            margin: 0 20px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #604b31;
+        }
+
+        .nav-menu a:hover {
+            background-color: #d5bc8f;
+        }
+
+        /* Otros estilos */
+        table#itemTable td {
+            text-transform: capitalize;
+            border-color: rgb(96 75 49);
+        }
+
+        span.itemname {
+            vertical-align: top;
+            font-size: large;
+            text-transform: capitalize;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        p.rareza {
+            text-align: right;
+        }
+
+        div#ventanadeinfo {
+            display: flex;
+            margin-top: 120px;
+            padding: 0;
+            position: fixed;
+        }
+
+        #contentPane {
+            width: 60%;
+            padding-left: 680px;
+            margin-top: 40px;
+            text-align-last: center;
+        }
+
+        td:hover {
+            background: #858585bf;
+        }
+
+        td.selected {
+            background: white;
+            color: black;
+        }
+
+        td {
+            border-radius: 20px;
+            background: #000000de;
+            color: white;
+            font-weight: bold;
+            text-align-last: center;
+        }
+
+        #itemTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        label.itemperpage {
+            color: wheat;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        #itemTable th, #itemTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        button:disabled {
+            border-radius: 10px;
+            background: #675638;
+            color: black;
+            font-weight: bold;
+        }
+
+        button {
+            border-radius: 10px;
+            background: #d5bc8f;
+            color: black;
+            font-weight: bold;
+        }
+
+        input#searchInput {
+            background: lightgrey;
+            border-radius: 10px;
+            font-weight: bolder;
+            color: black;
+            text-align: center;
+        }
+
+        select {
+            border-radius: 10px;
+            background: burlywood;
+            color: black;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        #itemTable th {
+            background-color: #a58154;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            border-color: #604b31;
+        }
+
+        label.Filtro {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        span#currentPage {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        .info-content img {
+            border-color: rgb(96 75 49);
+            border-radius: 10px;
+            border-style: ridge;
+        }
+
+        .separador {
+            display: flex;
+        }
+
+::-webkit-scrollbar {display: none;}

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url(data/interface/icon/background.png);
+        }
+::-webkit-scrollbar {display: none;}
+
+
+        img.imglogo {
+            margin: 10px auto;
+            height: 140px;
+            padding-left: 40%;
+            padding-right: 30%;
+        }
+
+div#menu {
+display: flex;
+}
+
+
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: left;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+}
+
+        table#itemTable td {
+            text-transform: capitalize;
+            border-color: rgb(96 75 49);
+        }
+
+        span.itemname {
+            vertical-align: top;
+            font-size: large;
+            text-transform: capitalize;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        div#ventanadeinfo {
+            display: flex;
+            margin-top: 120px;
+            padding: 0;
+            position: absolute;
+        }
+
+        #contentPane {
+            width: 60%;
+            padding-left: 680px;
+            margin-top: 40px;
+            text-align-last: center;
+        }
+
+        td:hover {
+            background: #858585bf;
+        }
+
+        td.selected {
+            background: white;
+            color: black;
+        }
+
+        td {
+            border-radius: 20px;
+            background: #000000de;
+            color: white;
+            font-weight: bold;
+            text-align-last: center;
+        }
+
+        #itemTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        label.itemperpage {
+            color: wheat;
+            font-weight: bold;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        #itemTable th, #itemTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        button:disabled {
+            border-radius: 10px;
+            background: #675638;
+            color: black;
+            font-weight: bold;
+        }
+
+        button {
+            border-radius: 10px;
+            background: #d5bc8f;
+            color: black;
+            font-weight: bold;
+        }
+
+        input#searchInput {
+            background: lightgrey;
+            border-radius: 10px;
+            font-weight: bolder;
+            color: black;
+            text-align: center;
+        }
+
+        select {
+            border-radius: 10px;
+            background: burlywood;
+            color: black;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        #itemTable th {
+            background-color: #a58154;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            border-color: #604b31;
+        }
+
+        label.Filtro {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        span#currentPage {
+            font-weight: bold;
+            color: wheat;
+            text-shadow: 0px 1px 4px black;
+        }
+
+        .info-content img {
+            border-color: rgb(96 75 49);
+            border-radius: 10px;
+            border-style: ridge;
+        }
+
+        .separador {
+            display: flex;
+        }
+    </style>
+    <link rel="stylesheet" href="data/styles/stylesQuests.css">
+</head>
+<body>
+<div id="menu">
+    <div class="logo">
+        <canvas class="imglogo" id="canvasLogo" style="place-self: center; display: block; width: 100%;" alt="Logo" width="900" height="360"></canvas>
+    </div>
+    <div class="nav-menu">
+        <a href="index.html">Items</a>
+        <a href="quests.html">Quests</a>
+        <a href="npc.html">NPC</a>
+        <a href="monsters.html">Monsters</a>
+        <a href="worldmap.html">Worldmap</a>
+</div>
+</div>
+
+    <div class="flexmenu">
+        <div id="ventanadeinfo">
+            <div id="infoPanel" style="top: 190px;">
+                <div id="itemInfo" style="width: 88%;border-radius: 20px;height: 100%;text-shadow: 0 0 13px black;padding-left: 30px;">
+                </div>
+            </div>
+        </div>
+        <div id="contentPane">
+    <div class="Filtros">
+            <label class="itemperpage" for="itemsPerPage">Items por página:</label>
+            <select id="itemsPerPage">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+            </select>
+            <br><br>
+            <input type="text" id="searchInput" placeholder="Buscar...">
+            <br><br>
+            <label for="typeFilter" class="Filtro">Filtrar por Tipo:</label>
+            <select id="typeFilter">
+                <option value="">Todos</option>
+            </select>
+            <br><br>
+                <label for="rarityFilter" class="Filtro">Filtrar por Categoria:</label>
+                <select id="rarityFilter">
+                    <option value="">Todos</option>
+                    <!-- Las opciones se llenarán dinámicamente -->
+                </select>
+                <br><br>
+<label for="minLevelInput" class="Filtro">Filtrar por Nivel:</label>
+De: <input type="number" id="minLevelInput" min="1" max="100" value="1" oninput="updateLevelRange()">
+Hasta: <input type="number" id="maxLevelInput" min="1" max="100" value="100" oninput="updateLevelRange()">
+<br><br>
+            <span class="Pagina_actual" id="currentPage"></span>
+<br>
+<button id="prevPage">
+    <img id="prevPageImg" src="data/img/bg/botonanterior.png" alt="Anterior" style="width: 32px; height: 32px;">
+</button>
+<button id="nextPage">
+    <img id="nextPageImg" src="data/img/bg/botonsiguiente.png" alt="Siguiente" style="width: 32px; height: 32px;">
+</button>
+            <br>
+    </div>
+            <table id="itemTable">
+                <thead>
+                    <tr>
+                        <th>Quest Name</th>
+                        <th>Level</th>
+                        <th>Place</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+  <script>
+
+
+
+
+    let currentPage = 1;
+    let rowsPerPage = 20;
+    let data = [];
+    let filteredData = [];
+    let questsData = [];
+    let itemsData = []; // Define itemsData como variable global
+
+
+
+window.onload = function() {
+    const canvas = document.getElementById('canvasLogo');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'data/interface/icon/logo.png';  // Ruta de tu imagen
+
+    img.onload = function() {
+        // Establecer el tamaño del canvas para que coincida con el tamaño de la imagen
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Dibuja la imagen en el canvas cuando esté cargada
+        drawImageOnCanvas(img);
+
+        // Luego aplicar el efecto de brillo
+        applyShine();
+    };
+
+    // Función para dibujar la imagen en el canvas
+    function drawImageOnCanvas(image) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);  // Dibuja la imagen en el canvas
+    }
+
+    // Función para aplicar el brillo dorado encima de la imagen
+    function applyShine() {
+        let offset = canvas.width;  // Comienza el brillo desde fuera del canvas por la derecha
+
+        function draw() {
+            // Redibuja la imagen sobre el canvas para mantenerla visible
+            drawImageOnCanvas(img);
+
+            // Crear un gradiente de brillo dorado (estilo oro) más estrecho
+            const shineWidth = 150;  // Puedes cambiar este valor para hacer el brillo más pequeño o más grande
+            const gradient = ctx.createLinearGradient(offset, 0, offset - shineWidth, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');    // Transparente
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');  // Brillo dorado
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');    // Transparente
+
+            // Crear un nuevo canvas de máscara para aplicar solo donde la imagen es visible
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+
+            // Dibuja la imagen sobre el maskCanvas
+            maskCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Extraemos la imagen como una máscara, donde lo blanco (opaco) permitirá ver el brillo
+            maskCtx.globalCompositeOperation = 'destination-in';  // Mantener la parte visible de la imagen
+            maskCtx.fillStyle = 'white';  // Definir lo que queremos mantener (la parte opaca de la imagen)
+            maskCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar el brillo sobre la imagen usando la máscara
+            ctx.globalCompositeOperation = 'source-over';  // Asegurarnos de que no se sobrescriba el brillo
+            ctx.drawImage(maskCanvas, 0, 0);  // Aplica la máscara sobre la imagen
+
+            // Usar el gradiente como una capa de brillo sobre la imagen
+            ctx.globalCompositeOperation = 'source-atop';  // Usamos 'source-atop' para que el brillo solo afecte las áreas visibles de la imagen
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restaurar el comportamiento normal de dibujo después de aplicar el brillo
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Mover el brillo hacia la izquierda con la velocidad ajustada
+            offset -= 17;  // Velocidad de 17 como pediste
+
+            // Cuando el brillo haya pasado por completo, reiniciar su posición
+            if (offset < -canvas.width) {
+                offset = canvas.width;
+            }
+
+            // Llamar a la función recursivamente para mantener el brillo en movimiento
+            requestAnimationFrame(draw);
+        }
+
+        // Iniciar la animación de brillo
+        draw();
+
+       fetch('data/xlsx/questsdb.xlsx')
+            .then(response => response.arrayBuffer())
+            .then(fileData => {
+                const workbook = XLSX.read(fileData, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                questsData = XLSX.utils.sheet_to_json(worksheet);
+                loadItemsDB();
+            });
+    };
+
+    function loadItemsDB() {
+        fetch('data/xlsx/itemsdb.xlsx')
+            .then(response => response.arrayBuffer())
+            .then(fileData => {
+                const workbook = XLSX.read(fileData, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                itemsData = XLSX.utils.sheet_to_json(worksheet); // Asigna a itemsData sin 'const'
+                processQuestsData(itemsData);
+            });
+    }
+}
+
+function processQuestsData(itemsData) {
+    data = questsData.map((quest) => {
+        const objectives = [
+            quest['Objective 1'],
+            quest['Objective 2'],
+            quest['Objective 3'],
+            quest['Objective 4'],
+            quest['Objective 5']
+        ];
+
+        const formattedObjectives = objectives
+            .filter(objective => objective && objective.trim() !== '')
+            .map(objective => `- ${objective.trim()}`)
+            .join('<br>');
+
+
+        // Convertir a HTML
+        const objectivesHtml = `<div class="objetivos">${formattedObjectives}</div>`;
+
+
+        return {
+            QuestName: quest['Quest Name'] || 'N/A',
+            id: quest['Id'] || 'N/A',
+            Description: quest['Description'] || 'No information about this quest',
+            Objectives: objectivesHtml, // Objetivos procesados
+            Level: quest['Level'] || 'N/A',
+            Category: quest['Category'] || '',
+            starts: quest['Starts'] || '',
+            ends: quest['Ends'] || '',
+            previousid: quest['PreviousQuest'] || '',
+            previous: quest['PreviousQuestName'] || '',
+            nextoid: quest['NextQuest'] || '',
+            nextoquesto: quest['NextQuestName'] || '',
+            Type: quest['Type'] || '',
+            Rarity: quest['Rarity'] || '',
+            Dialog: quest['Dialog'] || '',
+            Minimap1: quest['Minimap 1'] || '',
+            Minimap2: quest['Minimap 2'] || '',
+            Minimap3: quest['Minimap 3'] || '',
+            Minimap4: quest['Minimap 4'] || '',
+            RewardMoney: quest['Reward Money'] || '0',
+            RewardExperience: quest['Reward Experience'] || '0',
+            RewardItem1: quest['Rewards Items 1'] || '',
+            RewardItem2: quest['Rewards Items 2'] || '',
+            RewardItem3: quest['Rewards Items 3'] || '',
+            RewardItem5: quest['Rewards Items 4'] || '',
+            RewardItem4: quest['Rewards Items 5'] || '',
+            RewardItem1ID: quest['Rewards Items 1 ID'] || '',
+            RewardItem2ID: quest['Rewards Items 2 ID'] || '',
+            RewardItem3ID: quest['Rewards Items 3 ID'] || '',
+            RewardItem5ID: quest['Rewards Items 4 ID'] || '',
+            RewardItem4ID: quest['Rewards Items 5 ID'] || '',
+        };
+    });
+
+    filteredData = data.slice();
+    renderTable();
+    populateTypeFilter();
+    populateRarityFilter(); // Llenar el filtro de tipo
+}
+
+
+
+
+
+
+// Función para renderizar la tabla con los datos filtrados
+function renderTable() {
+    const tableBody = document.querySelector("#itemTable tbody");
+    tableBody.innerHTML = "";  // Limpiar la tabla antes de renderizar
+
+    // Paginación de los datos filtrados
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const paginatedData = filteredData.slice(start, end);
+
+    paginatedData.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = 
+            `<td class="itemname">${item.QuestName}</td>` +
+            `<td>${item.Level}</td>` +
+            `<td>${item.Category}</td>`;
+        row.addEventListener("mouseenter", () => showInfo(item));
+        row.addEventListener("click", () => selectRow(row));
+        tableBody.appendChild(row);
+    });
+
+    updatePagination();
+}
+
+// Función para manejar la búsqueda y los filtros
+function applyFilters() {
+    let filtered = data.slice();  // Copiar los datos originales
+
+    // Filtro de búsqueda por nombre
+    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+    if (searchTerm) {
+        filtered = filtered.filter(item => item.QuestName.toLowerCase().includes(searchTerm));
+    }
+
+    // Filtro de nivel mínimo
+    const minLevel = parseInt(document.getElementById("minLevelInput").value, 10);
+    if (!isNaN(minLevel)) {
+        filtered = filtered.filter(item => parseInt(item.Level, 10) >= minLevel);
+    }
+
+    // Filtro de nivel máximo
+    const maxLevel = parseInt(document.getElementById("maxLevelInput").value, 10);
+    if (!isNaN(maxLevel)) {
+        filtered = filtered.filter(item => parseInt(item.Level, 10) <= maxLevel);
+    }
+
+    // Filtro de tipo (si está seleccionado)
+    const typeFilter = document.getElementById("typeFilter").value;
+    if (typeFilter) {
+        filtered = filtered.filter(item => item.Type === typeFilter);
+    }
+
+    // Filtro de rareza (si está seleccionado)
+    const rarityFilter = document.getElementById("rarityFilter").value;
+    if (rarityFilter) {
+        filtered = filtered.filter(item => item.Category === rarityFilter);
+    }
+
+    // Actualizar la lista de datos filtrados
+    filteredData = filtered;
+    currentPage = 1;
+    renderTable();  // Vuelve a renderizar la tabla con los nuevos datos filtrados
+}
+
+// Llamar a applyFilters() cada vez que cambie cualquier filtro o el campo de búsqueda
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+document.getElementById("minLevelInput").addEventListener("input", applyFilters);
+document.getElementById("maxLevelInput").addEventListener("input", applyFilters);
+document.getElementById("typeFilter").addEventListener("change", applyFilters);
+document.getElementById("rarityFilter").addEventListener("change", applyFilters);
+
+// Función para actualizar la paginación
+function updatePagination() {
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+    document.getElementById("currentPage").innerText = `Página ${currentPage} de ${totalPages}`;
+
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
+}
+
+function showInfo(item) {
+    const infoPane = document.getElementById("itemInfo");
+
+
+let content = 
+    `<h2 class="questnamerareza" style="color: ${getQuestTypeColor(item.Type)}">${item.QuestName}</h2>` +
+    `<p class="descripciontexto">${item.Description}</p>` + `<p class="Objectivess">Objectives:</p>`+
+    `${item.Objectives}` + `<div class="places">` +
+        (item.starts && item.starts.trim() !== '' 
+            ? `<div class="starts" style="display:flex;"><p class="title">Starts in: </p><p class="place"> ${item.starts}</p></div>` 
+            : '')  + 
+        (item.ends && item.ends.trim() !== '' 
+            ? `<div class="ends" style="display:flex;"><p class="title">Ends in: </p><p class="place"> ${item.ends}</p></div>` 
+            : '') + `</div>` +
+`<div class="minimaps" style="text-align: -webkit-center;">` +
+    `<img class="minimapimg" style="border-radius:20px;padding: 2px;" src="${item.Minimap1}" width="200" onclick="onQuestImageClick('${item.Minimap1}','${item.QuestName.replace(/'/g, "\\'")}', '${item.id}')"/>` +
+    `<img class="minimapimg" style="border-radius:20px;padding: 2px;" src="${item.Minimap2}" width="200" onclick="onQuestImageClick('${item.Minimap2}','${item.QuestName.replace(/'/g, "\\'")}', '${item.id}')"/>` +
+    `<img class="minimapimg" style="border-radius:20px;padding: 2px;" src="${item.Minimap3}" width="200" onclick="onQuestImageClick('${item.Minimap3}','${item.QuestName.replace(/'/g, "\\'")}', '${item.id}')"/>` +
+    `<img class="minimapimg" style="border-radius:20px;padding: 2px;" src="${item.Minimap4}" width="200" onclick="onQuestImageClick('${item.Minimap4}','${item.QuestName.replace(/'/g, "\\'")}', '${item.id}')"/>` +
+`</div>`  +
+        (item.Dialog && item.Dialog.trim() !== '' 
+            ? `<p class="dialog">${item.Dialog.replace(/\n/g, '<br>')}</p>` 
+            : '') + `<div class="questosnice">` +
+        (item.previous && item.previous.trim() !== '' 
+            ? `<div class="prevquest">
+                 <p>Previous Quest:</p>
+                 <button class="buttonpreviousquest" onclick="searchQuest('${item.previousid}')">${item.previous}</button>
+               </div>` 
+            : '') +
+        (item.nextoquesto && item.nextoquesto.trim() !== '' 
+            ? `<div class="nextquest">
+                 <p>Next Quest:</p>
+                 <button class="buttonnextquest" onclick="searchQuest('${item.nextoid}')">${item.nextoquesto}</button>
+               </div>` 
+            : '') + `</div>`;
+
+let rewardContent = ""; // Contenido dinámico de recompensas
+let hasRewards = false; // Bandera para verificar si hay recompensas visibles
+
+
+
+    const rewardItems = [];
+
+    if (item.RewardItem1ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem1ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem1}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+    if (item.RewardItem2ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem2ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem2}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+
+    if (item.RewardItem3ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem3ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem3}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+
+    if (item.RewardItem4ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem4ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem4}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+
+    if (item.RewardItem5ID) {
+        rewardItems.push(
+	    `<div class="rewardsitems" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="${item.RewardItem5ID}">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">${item.RewardItem5}</p>` +
+                `<p class="info">   </p>` +
+            `</div>` +
+            `</div>`
+        );
+    }
+    // Puedes repetir para RewardItem3, RewardItem4 y RewardItem5 si es necesario.
+
+// Agregar rewardmoney solo si item.RewardMoney existe
+if (item.RewardMoney && String(item.RewardMoney).trim() !== '' && String(item.RewardMoney).trim() !== '0' && String(item.RewardMoney).trim() !== '0 cp') {
+    hasRewards = true;
+    rewardContent += 
+        `<div class="rewardmoney" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="data/img/icons/amount.png">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">AMOUNT</p>` +    
+                `<p class="info">${item.RewardMoney}</p>` + 
+            `</div>` +
+        `</div>`;
+}
+
+
+// Agregar experience solo si item.RewardExperience > 0
+if (typeof item.RewardExperience === 'number' && item.RewardExperience > 0) {
+    hasRewards = true;
+    rewardContent += 
+        `<div class="experience" style="text-align: -webkit-center;">` +    
+            `<img class="iconsimg" src="data/img/icons/experience.png">` +
+            `<div class="TitleEXP" style="display:flex; flex-direction: column;">` +
+                `<p class="info">EXP</p>` +
+                `<p class="info">${item.RewardExperience} EXP</p>` +
+            `</div>` +
+        `</div>`;
+}
+
+
+if (rewardItems.length > 0) {
+    hasRewards = true;
+    rewardContent += `<div class="rewards">` + rewardItems.join('') + `</div>`;
+}
+
+// Agregar las líneas <p> solo si hay recompensas visibles
+if (hasRewards) {
+    content += 
+        `<p class="recompensa"><strong>Reward:</strong></p>` + 
+        `<p class="rewardtext"><strong>You will receive the following rewards:</strong></p>` +
+        `<div class="yecompensas"><div class="reewards" style="text-align: -webkit-center; height: auto;">` +
+        rewardContent +
+        `</div></div>`;
+} else {
+    content += `<div class="yecompensas"><div class="reewards" style="display: none;"></div></div>`;
+}
+
+    // Actualiza el contenido del infoPane
+    infoPane.innerHTML = content;
+    // Actualizar visibilidad del infoPanel
+    updateVisibility();
+}
+
+    function getQuestTypeColor(type) {
+        const questColors = {
+            "DAILY": "#7dc96f",
+            "SUB": "#ffba37",
+            "REPEATABLE": "#d5bb2e",
+            "MAIN": "#31a8ff",
+            "": "#FFFFFF", // Blanco para tipo vacío
+            "TUTORIAL": "#FFFFFF" // Blanco para tipo vacío
+        };
+        
+        // Devuelve el color basado en el tipo o blanco si no hay coincidencia
+        return questColors[type] || '#FFFFFF';
+    }
+        function hideInfo() {
+            document.getElementById("itemInfo").innerHTML = 
+                `<p>Pasa el mouse sobre un ítem o selecciona uno para ver los detalles aquí.</p>`
+            ;
+        }
+
+        function selectRow(row) {
+            const rows = document.querySelectorAll("#itemTable tbody tr");
+            rows.forEach(r => r.classList.remove("selected"));
+            row.classList.add("selected");
+        }
+
+        function populateTypeFilter() {
+            const typeFilter = document.getElementById("typeFilter");
+            const types = [...new Set(data.map(item => item.Type))];
+            types.forEach(type => {
+                const option = document.createElement("option");
+                option.value = type;
+                option.innerText = type;
+                typeFilter.appendChild(option);
+            });
+        }
+// Función para buscar una quest por su ID
+function searchQuest(questId) {
+    // Convertir el questId a número para evitar problemas de comparación
+    const questIdNum = Number(questId);
+
+    // Primero buscamos directamente el quest con el ID proporcionado
+    let foundQuest = data.find(item => item.id === questIdNum);
+
+    // Si no se encuentra directamente, buscar por previousid o nextoid
+    if (!foundQuest) {
+        foundQuest = data.find(item => {
+            return item.previousid === questIdNum || item.nextoid === questIdNum;
+        });
+    }
+
+    // Si encontramos la quest, mostrar su información
+    if (foundQuest) {
+        showInfo(foundQuest); // Mostrar información en el panel
+    } else {
+        console.warn(`Quest con ID ${questId} no encontrada.`);
+    }
+}
+
+
+
+
+
+
+
+
+
+// Populate the type filter with unique types
+function populateRarityFilter() {
+    const rarityFilter = document.getElementById('rarityFilter');
+    const uniqueRarity = [...new Set(questsData.map(item => item['Category']))];
+
+    uniqueRarity.forEach(rarity => {
+        const option = document.createElement('option');
+        option.value = rarity;
+        option.textContent = rarity;
+        rarityFilter.appendChild(option);
+    });
+
+    rarityFilter.addEventListener('change', applyFilters); // Aplicar filtros al cambiar el tipo
+}
+
+
+
+
+
+
+        document.getElementById("itemsPerPage").addEventListener("change", (event) => {
+            rowsPerPage = parseInt(event.target.value);
+            currentPage = 1; 
+            renderTable();
+        });
+
+        document.getElementById("prevPage").addEventListener("click", () => {
+            if (currentPage > 1) currentPage--;
+            renderTable();
+        });
+
+        document.getElementById("nextPage").addEventListener("click", () => {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) currentPage++;
+            renderTable();
+        });
+
+function updateLevelRange() {
+    const minLevel = parseInt(document.getElementById("minLevelInput").value, 10);
+    const maxLevel = parseInt(document.getElementById("maxLevelInput").value, 10);
+    
+    // Asegurarse de que minLevel no sea mayor que maxLevel y viceversa
+    if (minLevel > maxLevel) {
+        document.getElementById("minLevelInput").value = maxLevel;
+    } else if (maxLevel < minLevel) {
+        document.getElementById("maxLevelInput").value = minLevel;
+    }
+
+    // Filtrar los datos según el rango de niveles seleccionado
+    filteredData = data.filter(item => item.Level >= minLevel && item.Level <= maxLevel);
+    renderTable();
+}
+
+
+
+
+function updateVisibility() {
+    const infoPanel = document.getElementById("infoPanel");
+    const itemInfo = document.getElementById("itemInfo");
+
+    // Verificar si itemInfo tiene contenido
+    if (itemInfo && itemInfo.innerHTML.trim()) {
+        // Mostrar infoPanel si hay contenido en itemInfo
+        infoPanel.style.display = "block";
+    } else {
+        // Ocultar infoPanel si itemInfo está vacío
+        infoPanel.style.display = "none";
+    }
+}
+
+
+// Modificar el visor para limpiar al cerrarse
+function setupImageViewer() {
+    const viewer = document.createElement('div');
+    viewer.id = 'imageViewer';
+    viewer.style.position = 'fixed';
+    viewer.style.top = '0';
+    viewer.style.left = '0';
+    viewer.style.width = '100vw';
+    viewer.style.height = '100vh';
+    viewer.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+    viewer.style.display = 'none';
+    viewer.style.alignItems = 'center';
+    viewer.style.justifyContent = 'center';
+    viewer.style.zIndex = '1000';
+    viewer.style.cursor = 'pointer';
+
+    const img = document.createElement('img');
+    img.id = 'viewerImage';
+    img.style.maxWidth = '90%';
+    img.style.maxHeight = '90%';
+    viewer.appendChild(img);
+
+    // Cerrar el visor al hacer clic
+    viewer.addEventListener('click', () => {
+        // Reiniciar el visor al cerrarse
+        resetImageViewer();
+    });
+
+    document.body.appendChild(viewer);
+}
+
+// Reiniciar el visor eliminando puntos e íconos dinámicos
+function resetImageViewer() {
+    const viewer = document.getElementById('imageViewer');
+    viewer.style.display = 'none';
+
+    // Eliminar todos los elementos con la clase 'dynamic-element'
+    const dynamicElements = document.querySelectorAll('.dynamic-element');
+    dynamicElements.forEach(el => el.remove());
+}
+
+
+// Leer datos desde Coordenadas.xlsx
+async function loadCoordinates() {
+    const response = await fetch('data/xlsx/Coordenadas.xlsx');
+    const arrayBuffer = await response.arrayBuffer();
+
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    // Convertir la hoja a JSON
+    const coordinatesData = XLSX.utils.sheet_to_json(sheet);
+    return coordinatesData;
+}
+
+// Mostrar puntos en el visor basados en coordenadas y validar con id
+async function showQuestCoordinates(questName, id, imgElement) {
+    const coordinatesData = await loadCoordinates();
+    const matchedCoordinates = coordinatesData.find((row) => {
+        // Validar que las propiedades existan antes de compararlas
+        const hasValidNombre = row.Nombre && typeof row.Nombre === 'string';
+        const hasValidID = row.ID && (typeof row.ID === 'string' || typeof row.ID === 'number');
+        return (
+            hasValidNombre &&
+            hasValidID &&
+            row.Nombre.trim() === questName.trim() &&
+            row.ID.toString() === id.toString()
+        );
+    });
+
+    if (matchedCoordinates) {
+        const { x, y } = matchedCoordinates; // Obtener coordenadas x, y
+        createRedPoint(imgElement, x, y, questName);
+    } else {
+        console.warn(`No se encontraron coordenadas para questName: ${questName}, id: ${id}`);
+    }
+}
+
+
+// Crear un ícono en lugar de un punto rojo
+function createRedPoint(imgElement, x, y, questName) {
+    const container = imgElement.parentNode; // Contenedor del visor
+    const rect = imgElement.getBoundingClientRect(); // Obtener dimensiones de la imagen
+
+    // Calcular posición del ícono relativo a la imagen
+    const xOffset = rect.left + x * (rect.width / imgElement.naturalWidth);
+    const yOffset = rect.top + y * (rect.height / imgElement.naturalHeight);
+
+    // Crear elemento del ícono
+    const icon = document.createElement('img');
+    icon.src = 'data/interface/icon/MapIcons/quest.png'; // Ruta del ícono
+    icon.classList.add('dynamic-element'); // Clase para identificarlo
+    icon.style.position = 'absolute';
+    icon.style.left = `${xOffset - 3}px`; // Ajustar para centrar el ícono
+    icon.style.top = `${yOffset - 12}px`; // Ajustar para centrar el ícono
+    icon.style.width = '15px'; // Tamaño del ícono
+    icon.style.height = '28px';
+    icon.style.zIndex = '1010';
+
+    // Crear etiqueta
+    const label = document.createElement('div');
+    label.innerText = questName;
+    label.classList.add('dynamic-element'); // Clase para identificarla
+    label.style.position = 'absolute';
+    label.style.left = `${xOffset + 12}px`;
+    label.style.top = `${yOffset}px`;
+    label.style.color = 'black';
+    label.style.fontSize = '12px';
+    label.style.zIndex = '1010';
+    label.style.textShadow = '0 0 10px #ffffff';
+    label.style.fontWeight = 'bold';
+
+    container.appendChild(icon);
+    container.appendChild(label);
+}
+
+// Modificar el visor para integrar los puntos con id
+function showImageViewerWithCoordinates(src, questName, id) {
+    const viewer = document.getElementById('imageViewer');
+    const img = document.getElementById('viewerImage');
+    img.src = src;
+
+    img.onload = () => {
+        showQuestCoordinates(questName, id, img); // Llamar al procesador de coordenadas después de cargar la imagen
+    };
+
+    viewer.style.display = 'flex';
+}
+
+// Llamar al visor con QuestName, ID y la imagen
+function onQuestImageClick(imageSrc, questName, id) {
+    showImageViewerWithCoordinates(imageSrc, questName, id);
+}
+
+// Inicializar el visor al cargar la página
+document.addEventListener('DOMContentLoaded', setupImageViewer);
+
+
+
+    </script>
+</body>
+</html>

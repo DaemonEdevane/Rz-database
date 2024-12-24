@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<!-- Incluir cargador OBJ -->
+<script src="https://cdn.babylonjs.com/loaders/babylon.objFileLoader.min.js"></script>
+<!-- Incluir el cargador de GLTF/GLB -->
+<script src="https://cdn.babylonjs.com/loaders/babylon.glTFFileLoader.min.js"></script>
+
+
+    <style>
+#renderCanvas {
+    -webkit-tap-highlight-color: transparent !important;
+}
+#renderCanvas:focus {
+    outline: none;
+}
+
+
+    </style>
+    <link rel="stylesheet" href="data/styles/stylesMonsters.css">
+</head>
+<body>
+<div id="menu">
+    <div class="logo">
+        <canvas class="imglogo" id="canvasLogo" style="place-self: center; display: block; width: 100%;" alt="Logo" width="900" height="360"></canvas>
+    </div>
+    <div class="nav-menu">
+        <a href="index.html">Items</a>
+        <a href="quests.html">Quests</a>
+        <a href="npc.html">NPC</a>
+        <a href="monsters.html">Monsters</a>
+        <a href="worldmap.html">Worldmap</a>
+</div>
+</div>
+
+<div class="flexmenu">
+  <div id="ventanadeinfo">
+     <div id="infoPanel" style="top: 190px;">
+    <div class="nameofmonster">
+	 <label id="montruosname"></label>
+    </div>
+	<div class="modelo3d" style="z-index:1;">	
+	<canvas id="renderCanvas" style="width: 569px; margin-left: -113px;margin-top: -80px;margin-bottom: -280px;"></canvas>
+	</div>
+<button id="fullscreenButton">Ver modelo en pantalla completa</button>
+		<div class="monstaimage" id="monstaimage" style="width: 468px; display: none; height: 259px;margin-bottom: -250px;margin-left: 100px;">
+		</div>
+                <div id="itemInfo" style="border-radius: 20px;height: 100%;text-shadow: 0 0 13px black;">
+       </div>
+	<div id="dropsw">
+
+    	</div>
+   </div>
+</div>
+        <div id="contentPane">
+            <div class="Filtros">
+                <label class="itemperpage" for="itemsPerPage">Items por página:</label>
+                <select id="itemsPerPage">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+                <br><br>
+                <input type="text" id="searchInput" placeholder="Buscar...">
+                <br><br>
+                <label for="typeFilter" class="Filtro">Filtrar por Tipo:</label>
+                <select id="typeFilter">
+                    <option value="">Todos</option>
+                </select>
+                <br><br>
+                <label for="minLevelInput" class="Filtro">Filtrar por Nivel:</label>
+                De: <input type="number" id="minLevelInput" min="1" max="100" value="1" oninput="updateLevelRange()">
+                Hasta: <input type="number" id="maxLevelInput" min="1" max="50" value="50" oninput="updateLevelRange()">
+                <br><br>
+                <span class="Pagina_actual" id="currentPage"></span>
+<br>
+<button id="prevPage">
+    <img id="prevPageImg" src="data/img/bg/botonanterior.png" alt="Anterior" style="width: 32px; height: 32px;">
+</button>
+<button id="nextPage">
+    <img id="nextPageImg" src="data/img/bg/botonsiguiente.png" alt="Siguiente" style="width: 32px; height: 32px;">
+</button>
+                <br>
+            </div>
+            <table id="itemTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Level</th>
+                        <th>Rarity</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let rowsPerPage = 20;
+        let data = [];
+        let filteredData = [];
+
+window.onload = function() {
+    const canvas = document.getElementById('canvasLogo');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'data/interface/icon/logo.png';  // Ruta de tu imagen
+
+    img.onload = function() {
+        // Establecer el tamaño del canvas para que coincida con el tamaño de la imagen
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Dibuja la imagen en el canvas cuando esté cargada
+        drawImageOnCanvas(img);
+
+        // Luego aplicar el efecto de brillo
+        applyShine();
+    };
+
+    // Función para dibujar la imagen en el canvas
+    function drawImageOnCanvas(image) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);  // Dibuja la imagen en el canvas
+    }
+
+    // Función para aplicar el brillo dorado encima de la imagen
+    function applyShine() {
+        let offset = canvas.width;  // Comienza el brillo desde fuera del canvas por la derecha
+
+        function draw() {
+            // Redibuja la imagen sobre el canvas para mantenerla visible
+            drawImageOnCanvas(img);
+
+            // Crear un gradiente de brillo dorado (estilo oro) más estrecho
+            const shineWidth = 150;  // Puedes cambiar este valor para hacer el brillo más pequeño o más grande
+            const gradient = ctx.createLinearGradient(offset, 0, offset - shineWidth, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');    // Transparente
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');  // Brillo dorado
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');    // Transparente
+
+            // Crear un nuevo canvas de máscara para aplicar solo donde la imagen es visible
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+
+            // Dibuja la imagen sobre el maskCanvas
+            maskCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Extraemos la imagen como una máscara, donde lo blanco (opaco) permitirá ver el brillo
+            maskCtx.globalCompositeOperation = 'destination-in';  // Mantener la parte visible de la imagen
+            maskCtx.fillStyle = 'white';  // Definir lo que queremos mantener (la parte opaca de la imagen)
+            maskCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar el brillo sobre la imagen usando la máscara
+            ctx.globalCompositeOperation = 'source-over';  // Asegurarnos de que no se sobrescriba el brillo
+            ctx.drawImage(maskCanvas, 0, 0);  // Aplica la máscara sobre la imagen
+
+            // Usar el gradiente como una capa de brillo sobre la imagen
+            ctx.globalCompositeOperation = 'source-atop';  // Usamos 'source-atop' para que el brillo solo afecte las áreas visibles de la imagen
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restaurar el comportamiento normal de dibujo después de aplicar el brillo
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Mover el brillo hacia la izquierda con la velocidad ajustada
+            offset -= 17;  // Velocidad de 17 como pediste
+
+            // Cuando el brillo haya pasado por completo, reiniciar su posición
+            if (offset < -canvas.width) {
+                offset = canvas.width;
+            }
+
+            // Llamar a la función recursivamente para mantener el brillo en movimiento
+            requestAnimationFrame(draw);
+        }
+
+        // Iniciar la animación de brillo
+        draw();
+
+            fetch('data/xlsx/monsterdb.xlsx')
+                .then(response => response.arrayBuffer())
+                .then(fileData => {
+                    const workbook = XLSX.read(fileData, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const monstersData = XLSX.utils.sheet_to_json(worksheet);
+                    processMonstersData(monstersData);
+                });
+    }
+}
+
+function processMonstersData(monstersData) {
+    data = monstersData.map((monster) => {
+        // Crear un conjunto para almacenar drops únicos
+        const uniqueDrops = new Set();
+
+        return {
+            Name: monster['Name'] || 'N/A',
+            Level: monster['Level'] || 'N/A',
+            Type: monster['Type'] || 'N/A',
+            Rarity: monster['Rarity'] || 'N/A',
+            Link: monster['Link'] || 'N/A',
+            Hp: monster['Hp'] || 'N/A',
+            Armor: monster['Armor'] || 'N/A',
+            MagicArmor: monster['Magic Armor'] || 'N/A',
+            Damage: monster['Damage'] || 'N/A',
+            MagicDamage: monster['Magic Damage'] || 'N/A',
+            Clan: monster['Clan'] || 'N/A',
+            Zone1: monster['Zone 1'] || 'N/A',
+            SubZone: monster['Sub Zone'] || 'N/A',
+            MonsterIMG: monster['MonsterIMG'] || '', // Nueva columna para la imagen
+            Modeldir: monster['ModelDir'] || '', // Nueva columna para el modelo
+            moxml: monster['xml'] || '', // Nueva columna para el xml
+            mdname: monster['mdname'] || '', // Nueva columna para nombre de archivo
+            // Filtro para obtener drops únicos
+            Drops: Array.from({ length: 253 }, (_, i) => ({
+                Drop: monster[`Drop ${i + 1}`] || 'N/A',
+                DropPercentage: monster[`Drop Percentage ${i + 1}`] || 'N/A',
+                Img: monster[`Img ${i + 1}`] || ''
+            })).filter((drop) => {
+                // Filtrar por Drop único
+                if (drop.Drop === 'N/A' || uniqueDrops.has(drop.Drop)) {
+                    return false; // Si está repetido o es "N/A", ignorarlo
+                }
+                uniqueDrops.add(drop.Drop); // Añadir al conjunto si es único
+                return true; // Mantener en la lista
+            })
+        };
+    });
+
+    filteredData = data.slice();
+    renderTable();
+    populateTypeFilter();
+}
+
+let currentScene = null; // Variable para almacenar la escena actual
+let currentEngine = null; // Variable para almacenar el motor actual
+let modelScaled = false; // Estado para controlar si el modelo está escalado
+const fullscreenButton = document.getElementById("fullscreenButton");
+
+function loadModelWithBabylon(Modeldir, mdname, moxml) {
+    const canvas = document.getElementById("renderCanvas");
+
+    // Limpiar escena anterior si existe
+    if (currentScene) {
+        currentScene.meshes.forEach(mesh => mesh.dispose()); // Eliminar todos los meshes
+        currentScene.lights.forEach(light => light.dispose()); // Eliminar todas las luces
+        currentScene.cameras.forEach(camera => camera.dispose()); // Eliminar todas las cámaras
+        currentScene.dispose(); // Eliminar la escena
+        currentScene = null; // Asegurarse de liberar la referencia
+    }
+
+    // Limpiar motor anterior si existe
+    if (currentEngine) {
+        currentEngine.stopRenderLoop(); // Detener el ciclo de renderizado
+        currentEngine.dispose(); // Liberar el motor
+        currentEngine = null; // Asegurarse de liberar la referencia
+    }
+
+    console.log("Modelo que se intenta cargar:", Modeldir + mdname);
+
+    // Crear el nuevo motor
+    currentEngine = new BABYLON.Engine(canvas, true, {
+        preserveDrawingBuffer: true,
+        stencil: true,
+        antialiasing: true, 
+        adaptToDeviceRatio: true
+    });
+
+    // Asegura la calidad alta en pantalla completa (ajustar si necesario)
+    currentEngine.loadingScreen = {
+        displayLoadingUI: function () { /* No hacer nada */ },
+        hideLoadingUI: function () { /* No hacer nada */ }
+    };
+
+    // Crear la nueva escena
+    currentScene = new BABYLON.Scene(currentEngine);
+    currentScene.clearColor = new BABYLON.Color4(0, 0, 0, 0); // Fondo transparente
+
+    // Crear cámara
+    const camera = new BABYLON.ArcRotateCamera(
+        "camera1",
+        Math.PI / 2, // Vista frontal
+        Math.PI / 2, // Vista frontal (ángulo vertical)
+        10,
+        BABYLON.Vector3.Zero(),
+        currentScene
+    );
+    camera.attachControl(canvas, true);
+
+    // Deshabilitar zoom y panorámica
+    camera.panningSensibility = 0;
+    camera.wheelPrecision = 0;
+
+    // Inhabilitar efecto de la rueda del ratón
+    canvas.addEventListener('wheel', function (e) {
+        e.preventDefault();
+    }, { passive: false });
+
+    // Crear luz
+    new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), currentScene);
+
+    console.log("Iniciando carga del modelo...");
+
+    if (!Modeldir || !mdname) {
+        console.log("No hay datos válidos para cargar el modelo. Cargando el modelo vacío.");
+        Modeldir = "data/model/obj/";  // Directorio vacío
+        mdname = "empty.obj";  // Nombre del archivo vacío
+    } else {
+        console.log("Modelo que se intenta cargar:", Modeldir + mdname);
+    }
+
+    const objUrl = Modeldir + mdname;
+    const mtlName = mdname.replace(".obj", ".mtl");
+    const mtlUrl = Modeldir + mtlName;
+
+    // Cargar el modelo
+    BABYLON.SceneLoader.Append("", objUrl, currentScene, function () {
+        console.log("Modelo cargado exitosamente");
+
+        // Configurar transparencyMode para cada material del modelo
+        currentScene.materials.forEach((material) => {
+            if (material instanceof BABYLON.StandardMaterial || material instanceof BABYLON.PBRMaterial) {
+                material.transparencyMode = BABYLON.Material.MATERIAL_ALPHATESTANDBLEND;
+            }
+        });
+
+        // Mostrar u ocultar el botón de fullscreen según el modelo cargado
+        const fullscreenButton = document.getElementById("fullscreenButton");
+        if (mdname === "empty.obj") {
+            fullscreenButton.style.display = "none";  // Ocultar botón si el modelo es empty.obj
+        } else {
+            fullscreenButton.style.display = "block";  // Mostrar botón si el modelo no es empty.obj
+        }
+
+        fetch(mtlUrl)
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    console.log("No se encontró archivo MTL, intentando cargar XML...");
+                    // Intentar cargar directamente desde el moxml si no existe el archivo MTL
+                    if (moxml) {
+                        console.log("Cargando archivo XML desde la ruta especificada:", moxml);
+                        return fetch(moxml).then(response => response.text());
+                    } else {
+                        return null; // Si no hay XML proporcionado, continuar sin aplicar materiales
+                    }
+                }
+            })
+            .then(xmlData => {
+                if (xmlData) {
+                    console.log("Archivo XML cargado exitosamente, aplicando materiales...");
+                    parseXMLAndApplyMaterials(xmlData, Modeldir);
+                } else {
+                    console.log("No se encontró archivo XML, cargando modelo sin texturas.");
+                }
+            })
+            .catch(error => console.error("Error al cargar los materiales:", error));
+
+        // Ajustar la cámara al modelo cargado
+        let min = new BABYLON.Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+        let max = new BABYLON.Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+
+        currentScene.meshes.forEach(mesh => {
+            const boundingInfo = mesh.getBoundingInfo();
+            if (boundingInfo) {
+                const boundingBox = boundingInfo.boundingBox;
+                min = BABYLON.Vector3.Minimize(min, boundingBox.minimumWorld);
+                max = BABYLON.Vector3.Maximize(max, boundingBox.maximumWorld);
+            }
+        });
+
+        const center = BABYLON.Vector3.Center(min, max);
+        const size = max.subtract(min);
+        const distance = Math.max(size.x, size.y, size.z) * 1.5;
+
+        camera.target = center;
+        camera.position = new BABYLON.Vector3(center.x, center.y, center.z + distance);
+        camera.lowerBetaLimit = Math.PI / 2;
+        camera.upperBetaLimit = Math.PI / 2;
+        camera.lowerRadiusLimit = distance;
+        camera.upperRadiusLimit = distance;
+
+        console.log("Ajuste de cámara y modelo completado");
+    });
+
+    // Ciclo de renderizado
+    currentEngine.runRenderLoop(() => {
+        currentScene.render();
+    });
+
+    // Ajustar el canvas si cambia el tamaño de la ventana
+    window.addEventListener("resize", () => {
+        currentEngine.resize();
+    });
+}
+
+function parseXMLAndApplyMaterials(xmlData, Modeldir) {
+    console.log("Iniciando procesamiento de XML...");
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlData, "text/xml");
+    console.log("XML Procesado:", xmlDoc);
+
+    const materialElements = Array.from(xmlDoc.querySelectorAll("MATERIALLIST MATERIAL"));
+
+    if (materialElements.length > 0) {
+        const materialMap = new Map();
+        let defaultMaterial = null;
+
+        // Crear materiales desde el XML
+        materialElements.forEach((materialElement) => {
+            const materialName = materialElement.getAttribute("name");
+            console.log("Material encontrado:", materialName);
+
+            const diffuse = materialElement.querySelector("DIFFUSE").textContent.split(" ").map(Number);
+            const ambient = materialElement.querySelector("AMBIENT").textContent.split(" ").map(Number);
+            const specular = materialElement.querySelector("SPECULAR").textContent.split(" ").map(Number);
+            const specularLevel = parseFloat(materialElement.querySelector("SPECULAR_LEVEL").textContent);
+
+            const material = new BABYLON.StandardMaterial(materialName, currentScene);
+
+            material.diffuseColor = new BABYLON.Color3(...diffuse);
+            material.ambientColor = new BABYLON.Color3(...ambient);
+            material.specularColor = new BABYLON.Color3(...specular);
+            material.specularPower = specularLevel;
+
+            material.alpha = 1;
+            material.hasAlpha = true;  // No nos interesa controlar la propiedad alpha
+            material.transparencyMode = BABYLON.Material.MATERIAL_ALPHATESTANDBLEND;
+
+            // Primero cargamos el SELFILLUMINATIONMAP (emissive)
+            const textureLayers = Array.from(materialElement.querySelectorAll("TEXTURELAYER"));
+
+            let selfIlluminationTexture = null;
+textureLayers.forEach((layer) => {
+    const selfIlluminationMap = layer.querySelector("SELFILLUMINATIONMAP");
+    const diffuseMap = layer.querySelector("DIFFUSEMAP");
+    const specularMap = layer.querySelector("SPECULARMAP");
+    const normalMap = layer.querySelector("NORMALMAP");
+    const opacityMap = layer.querySelector("OPACITYMAP");
+
+    const textures = {
+        selfIllumination: selfIlluminationMap ? selfIlluminationMap.textContent.replace(".dds", ".png") : null,
+        diffuse: diffuseMap ? diffuseMap.textContent.replace(".dds", ".png") : null,
+        specular: specularMap ? specularMap.textContent.replace(".dds", ".png") : null,
+        normal: normalMap ? normalMap.textContent.replace(".dds", ".png") : null,
+        opacity: opacityMap ? opacityMap.textContent.replace(".dds", ".png") : null,
+    };
+
+    console.log("Texturas cargadas:", textures);
+
+    // Asegúrate de que la textura emisiva se aplique correctamente
+    if (textures.selfIllumination) {
+        const selfIlluminationTexture = new BABYLON.Texture("data/model/obj/texture/character/" + textures.selfIllumination, currentScene);
+        material.emissiveTexture = selfIlluminationTexture;  // Aplicar textura emisiva
+        material.emissiveColor = new BABYLON.Color3(1, 1, 1); // Blanco brillante para auto-iluminación
+    }
+
+    // No modificar el transparencyMode a opaco cuando aplicas selfIllumination
+    if (textures.diffuse) {
+        const texture = new BABYLON.Texture("data/model/obj/texture/character/" + textures.diffuse, currentScene);
+        material.diffuseTexture = texture;  // Aplicar textura difusa
+    }
+    if (textures.specular) {
+        const texture = new BABYLON.Texture("data/model/obj/texture/character/" + textures.specular, currentScene);
+        material.specularTexture = texture;
+    }
+    if (textures.normal) {
+        const texture = new BABYLON.Texture("data/model/obj/texture/character/" + textures.normal, currentScene);
+        material.bumpTexture = texture;
+    }
+    if (textures.opacity) {
+        const texture = new BABYLON.Texture("data/model/obj/texture/character/" + textures.opacity, currentScene);
+        material.alphaTexture = texture;
+    }
+});
+
+
+            materialMap.set(materialName, material);
+            if (!defaultMaterial) {
+                defaultMaterial = material;  // Establecer el primer material como predeterminado
+            }
+        });
+
+        // Si el archivo XML contiene materiales, eliminamos el material predeterminado si existe
+        if (currentScene.defaultMaterial) {
+            console.log("Eliminando material predeterminado...");
+            currentScene.defaultMaterial.dispose();
+            currentScene.defaultMaterial = null;
+        }
+
+        // Asignar materiales a los meshes según el nombre
+        currentScene.meshes.forEach((mesh) => {
+            let matchingMaterial = defaultMaterial;
+
+            // Verificar si el mesh tiene un material que coincida con los materiales del XML
+            for (let [key, material] of materialMap.entries()) {
+                if (mesh.name.includes(key)) {
+                    matchingMaterial = material;  // Asignar material que coincide con el nombre
+                    break;
+                }
+            }
+
+            // Si se encuentra un material coincidente, asignarlo
+            console.log(`Asignando material ${matchingMaterial.name} al mesh ${mesh.name}`);
+            mesh.material = matchingMaterial;  // Asignar material encontrado
+        });
+
+        console.log("Materiales aplicados y actualizados exitosamente.");
+    } else {
+        console.log("No se encontraron materiales en el XML.");
+    }
+
+    // Añadir más luz a la escena (ejemplo: luz direccional)
+    const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), currentScene);
+    light.intensity = 0.7;  // Incrementa la intensidad de la luz
+
+    const directionalLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(0, -1, -1), currentScene);
+    directionalLight.intensity = 1;  // Ajusta la intensidad de la luz direccional
+    directionalLight.position = new BABYLON.Vector3(10, 10, 10);  // Ajusta la posición de la luz
+}
+
+
+
+// O puedes activarlo al presionar una tecla (por ejemplo, F12)
+window.addEventListener("keydown", function (event) {
+    if (event.key === "F12") { // Cambia "F12" por otra tecla si lo deseas
+        if (currentScene.debugLayer.isVisible()) {
+            currentScene.debugLayer.hide();
+        } else {
+            currentScene.debugLayer.show({
+                embedMode: false // Cambia a true si prefieres que esté embebido
+            });
+        }
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function replaceAsterisks(text) {
+            return text.replace(/\*/g, "'"); // Reemplaza asteriscos por comillas simples
+        }
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+    const currentPageElement = document.getElementById('currentPage');
+
+    if (currentPageElement) {
+        currentPageElement.textContent = `Página ${currentPage} de ${totalPages}`;
+    } else {
+        console.warn("Elemento con ID 'currentPage' no encontrado en el DOM.");
+    }
+}
+
+function renderTable() {
+    const tableBody = document.querySelector('#itemTable tbody');
+    tableBody.innerHTML = '';
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const itemsToDisplay = filteredData.slice(start, end);
+
+    if (itemsToDisplay.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="3">No se encontraron resultados.</td></tr>';
+    } else {
+        itemsToDisplay.forEach(monster => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="monster-name" data-monster='${JSON.stringify(monster).replace(/'/g, "&apos;")}'>${replaceAsterisks(monster.Name)}</td>
+                <td>${monster.Level}</td>
+                <td>${monster.Rarity}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    updatePagination();
+}
+
+
+const monsterim = document.getElementById('monstaimage');
+
+function displayMonsterInfo(monster) {
+    const infoPane = document.getElementById('itemInfo');
+    const dropsw = document.getElementById('dropsw');
+    const dropsList = monster.Drops
+        .filter(drop => drop.Drop && drop.Drop !== 'N/A')
+        .map(drop => `
+            <li class="dropydrop">
+                ${drop.Img ? `<img class="imgdrop" src="${drop.Img}" alt="${replaceAsterisks(drop.Drop)}" />` : ''}
+                <strong class="dropname">${replaceAsterisks(drop.Drop)}: ${drop.DropPercentage}% </strong>
+            </li>
+        `).join('');
+
+    // Lógica para el fondo de monsterim
+    if (monster.MonsterIMG) {
+        monsterim.style.backgroundImage = `url('${monster.MonsterIMG}')`;
+        monsterim.style.backgroundRepeat = `no-repeat`;
+        monsterim.style.backgroundSize = `cover`;
+        monsterim.style.position = `relative`;
+        monsterim.style.zIndex = `0`;
+    } else {
+        monsterim.style.backgroundImage = `url('data/img/monsters/unknown.png')`;
+        monsterim.style.backgroundRepeat = `no-repeat`;
+        monsterim.style.backgroundSize = `cover`;
+    }
+
+    // Actualizar el nombre del monstruo
+    const currentnamemonster = document.getElementById('montruosname');
+    if (montruosname) {
+        montruosname.textContent = `${monster.Name}`;
+    } else {
+        montruosname.textContent = ``;
+    }
+
+
+    const clanInfo = monster.Clan && monster.Clan !== 'N/A' ? `<p id="datass"><strong>Clan</strong> <strong class="valortabla">${replaceAsterisks(monster.Clan)}</strong></p>` : '';
+    const zoneInfo = monster.Zone1 && monster.Zone1 !== 'N/A' ? `<p id="datass"><strong>Zone</strong> <strong class="valortabla">${monster.Zone1}</strong></p>` : '';
+    const subZoneInfo = monster.SubZone && monster.SubZone !== 'N/A' ? `<p id="datass"><strong>Sub-Zone</strong> <strong class="valortabla">${monster.SubZone}</strong></p>` : '';
+    const hpPercentage = (monster.Hp / monster.Hp) * 100; // Calcula el porcentaje
+
+infoPane.innerHTML = `
+    <div class="infomonster">
+        <div class="BasicInfo">
+            <p id="datass" class="level"><strong>Level:</strong> <strong class="valortabla">${monster.Level}</strong></p>
+            <p class="hp-bar">
+                <strong><strong>HP:</strong>
+                <strong class="hp-labe" id="fill" style="width: ${hpPercentage}%;">${monster.Hp}</strong>
+                <strong class="hp-label" id="fill" style="width: ${hpPercentage}%;">${monster.Hp} / ${monster.Hp}</strong></strong>
+            </p>
+            <p id="datass"><strong>Rarity:</strong> <strong class="valortabla">${monster.Rarity}</strong></p>
+            <p id="datass"><strong>Armour:</strong> <strong class="valortabla">${monster.Armor}</strong></p>
+            <p id="datass"><strong>Magic Armour:</strong> <strong class="valortabla">${monster.MagicArmor}</strong></p>
+            <p id="datass"><strong>Damage:</strong> <strong class="valortabla">${monster.Damage}</strong></p>
+            <p id="datass"><strong>Magic Damage:</strong> <strong class="valortabla">${monster.MagicDamage}</strong></p>
+            ${clanInfo}
+            ${zoneInfo}
+            ${subZoneInfo}
+        </div>
+    </div>
+`;
+
+
+    // Mostrar u ocultar dropsw basado en dropsList
+    if (dropsList) {
+        dropsw.style.display = 'block'; // Mostrar
+        dropsw.innerHTML = `
+            <div class="Dropsy">
+                <ul class="dropslists">
+                    <div class="DropsAndInfo">
+            <br>
+              <h4 class="DropTitle">Drops:</h4>
+                        ${dropsList}
+                    </div>
+                </ul>    
+            </div>
+        `;
+    } else {
+        dropsw.style.display = 'none'; // Ocultar si no hay drops
+        dropsw.innerHTML = ''; // Vaciar contenido
+    }
+
+    // Cargar el modelo 3D si ModelDir tiene un valor
+       loadModelWithBabylon(monster.Modeldir, monster.mdname, monster.moxml);
+}
+
+
+        document.querySelector('#itemTable tbody').addEventListener('mouseover', (event) => {
+            const monsterNameCell = event.target.closest('td.monster-name');
+            if (monsterNameCell) {
+                let monsterData = monsterNameCell.dataset.monster;
+                monsterData = monsterData.replace(/'/g, "\\'");
+
+                try {
+                    const monster = JSON.parse(monsterData);
+                    displayMonsterInfo(monster);
+                } catch (error) {
+                    console.error('Error al parsear los datos del monstruo:', error);
+                }
+            }
+        });
+
+        document.getElementById('itemsPerPage').addEventListener('change', (event) => {
+            rowsPerPage = parseInt(event.target.value, 10);
+            currentPage = 1;
+            renderTable();
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (event) => {
+            const searchTerm = event.target.value.toLowerCase();
+            filteredData = data.filter(monster => 
+                monster.Name.toLowerCase().includes(searchTerm) ||
+                monster.Rarity.toLowerCase().includes(searchTerm) ||
+                monster.Type.toLowerCase().includes(searchTerm)
+            );
+            currentPage = 1;
+           applyFilters();
+        });
+
+document.getElementById("typeFilter").addEventListener("change", (event) => {
+    const selectedRarity = event.target.value;
+    if (selectedRarity) {
+        filteredData = data.filter(monster => monster.Rarity === selectedRarity); // Mantén 'monster'
+    } else {
+        filteredData = data.slice();
+    }
+    currentPage = 1;
+        applyFilters();
+});
+
+        document.getElementById('minLevelInput').addEventListener('input', updateLevelRange);
+        document.getElementById('maxLevelInput').addEventListener('input', updateLevelRange);
+
+        function updateLevelRange() {
+            const minLevel = parseInt(document.getElementById('minLevelInput').value);
+            const maxLevel = parseInt(document.getElementById('maxLevelInput').value);
+            filteredData = data.filter(monster => 
+                monster.Level >= minLevel && monster.Level <= maxLevel
+            );
+            currentPage = 1;
+                applyFilters();
+        }
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const selectedType = document.getElementById("typeFilter").value;
+    const minLevel = parseInt(document.getElementById('minLevelInput').value);
+    const maxLevel = parseInt(document.getElementById('maxLevelInput').value);
+
+    filteredData = data.filter(monster => {
+        const matchesSearch = monster.Name.toLowerCase().includes(searchTerm);
+        const matchesType = selectedType ? monster.Rarity === selectedType : true;
+        const matchesLevel = monster.Level >= minLevel && monster.Level <= maxLevel;
+
+        return matchesSearch && matchesType && matchesLevel;
+    });
+
+    currentPage = 1;
+    renderTable();
+}
+
+
+function populateTypeFilter() {
+    const typeFilter = document.getElementById("typeFilter");
+    const raritiesOrder = ['Normal', 'Common', 'Rare', 'Epic']; // Orden específico
+    const rarities = [...new Set(data.map(monster => monster.Rarity))];
+    
+    // Filtra las rarezas según el orden deseado
+    raritiesOrder.forEach(rarity => {
+        if (rarities.includes(rarity)) { // Solo agrega si existe en los datos
+            const option = document.createElement("option");
+            option.value = rarity;
+            option.innerText = rarity;
+            typeFilter.appendChild(option);
+        }
+    });
+}
+
+document.getElementById('prevPage').addEventListener('mousedown', () => {
+    document.getElementById('prevPageImg').src = "data/img/bg/botonanteriorseleccionado.png";
+});
+document.getElementById('prevPage').addEventListener('mouseup', () => {
+    document.getElementById('prevPageImg').src = "data/img/bg/botonanterior.png";
+});
+
+document.getElementById('nextPage').addEventListener('mousedown', () => {
+    document.getElementById('nextPageImg').src = "data/img/bg/botonsiguienteseleccionado.png";
+});
+document.getElementById('nextPage').addEventListener('mouseup', () => {
+    document.getElementById('nextPageImg').src = "data/img/bg/botonsiguiente.png";
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const fullscreenButton = document.getElementById("fullscreenButton");
+    const renderCanvas = document.getElementById("renderCanvas");
+    const canvas = document.querySelector("canvas#renderCanvas");
+    const modelo = document.querySelector(".modelo3d");  // Cambiado a querySelector para buscar por clase
+    const infoss = document.querySelector(".BasicInfo");
+
+
+if (!fullscreenButton) {
+    console.error("El botón con ID 'fullscreenButton' no se encontró.");
+} else {
+    console.log("Botón encontrado correctamente:", fullscreenButton);
+}
+    // Verifica que el elemento "modelo3d" existe
+    if (!modelo) {
+        console.error("Elemento con clase 'modelo3d' no encontrado");
+        return;  // Detiene la ejecución si no se encuentra el elemento
+    }
+
+    const originalRenderCanvasStyles = {
+        width: '569px',
+        marginLeft: '-113px',
+        marginTop: '-80px',
+        marginBottom: '-280px',
+        touchAction: 'none',
+        backgroundImage: '',
+    };
+
+
+    const originalModeloCanvasStyles = {
+        marginTop: '70px',
+    };
+
+    const originalInfoCanvasStyles = {
+        marginTop: '70px',
+    };
+
+    const originalBasicInfoStyles = {
+        marginTop: '203px',
+        border: '43px solid transparent',
+        borderImage: 'url(data/img/bg/border.png) 20% round',
+        background: '#0000004a',
+        width: '259px',
+        zIndex: '0',
+	position: 'static',
+        backgroundImage: '',
+        backgroundRepeat: '',
+        backgroundPositionY: '',
+        backgroundPositionX: '',
+        backgroundSize: '',
+	top: '0px',
+    };
+
+    const originalCanvasStyles = {
+        backgroundImage: 'url(data/img/bg/modelbox.png)',
+        backgroundRepeat: 'no-repeat',
+        backgroundPositionY: '-3px',
+        backgroundPositionX: '109px',
+        backgroundSize: '61% 95.8%',
+    };
+
+    fullscreenButton.addEventListener("click", () => {
+        if (!document.body.classList.contains("fullscreen")) {
+            // Activar modo pantalla completa (canvas)
+            document.body.classList.add("fullscreen");
+
+            // Ajustar tamaño del canvas
+            renderCanvas.style.width = '100%';
+            renderCanvas.style.height = '100%';
+
+            currentEngine.resize(); // Redimensionar el motor de BabylonJS
+            fullscreenButton.textContent = "Salir";
+            // Eliminar estilos específicos cuando se entra en pantalla completa
+            renderCanvas.style.width = '';
+            renderCanvas.style.marginLeft = '';
+            renderCanvas.style.marginTop = '';
+            renderCanvas.style.marginBottom = '';
+            renderCanvas.style.touchAction = '';
+            renderCanvas.style.backgroundImage = '';
+            
+            // Verificar si el modelo existe antes de intentar modificarlo
+            if (modelo) {
+                modelo.style.marginTop = '';  // Eliminar el margen superior de modelo
+            }
+
+            // Eliminar estilos específicos cuando se entra en pantalla completa
+
+            canvas.style.backgroundImage = 'url(data/img/bg/fondo.jpg)';
+            canvas.style.backgroundRepeat = '';
+            canvas.style.backgroundPositionY = '';
+            canvas.style.backgroundPositionX = 'center';
+            canvas.style.backgroundSize = '100% 100%';
+
+
+            infoss.style.position = 'absolute';
+            infoss.style.backgroundImage = 'url(data/img/bg/modelbox.png)';
+            infoss.style.backgroundRepeat = 'no-repeat';
+            infoss.style.backgroundSize = '135% 135%';
+            infoss.style.backgroundPositionY = '-48px';
+            infoss.style.backgroundPositionX = '-45px';
+            infoss.style.marginTop = '';
+
+
+
+
+        } else {
+            // Desactivar modo pantalla completa
+            document.body.classList.remove("fullscreen");
+            fullscreenButton.textContent = "Ver modelo en pantalla completa";
+            // Restaurar los estilos originales al salir de pantalla completa
+            renderCanvas.style.width = originalRenderCanvasStyles.width;
+            renderCanvas.style.marginLeft = originalRenderCanvasStyles.marginLeft;
+            renderCanvas.style.marginTop = originalRenderCanvasStyles.marginTop;
+            renderCanvas.style.marginBottom = originalRenderCanvasStyles.marginBottom;
+            renderCanvas.style.touchAction = originalRenderCanvasStyles.touchAction;
+
+            
+            if (modelo) {
+                modelo.style.marginTop = originalModeloCanvasStyles.marginTop; // Restaurar el margen superior original de modelo
+            }
+
+            canvas.style.backgroundImage = originalCanvasStyles.backgroundImage;
+            canvas.style.backgroundRepeat = originalCanvasStyles.backgroundRepeat;
+            canvas.style.backgroundPositionY = originalCanvasStyles.backgroundPositionY;
+            canvas.style.backgroundPositionX = originalCanvasStyles.backgroundPositionX;
+            canvas.style.backgroundSize = originalCanvasStyles.backgroundSize;
+
+            infoss.style.position = originalBasicInfoStyles.position;
+            infoss.style.backgroundImage = originalBasicInfoStyles.backgroundImage;
+            infoss.style.backgroundRepeat = originalBasicInfoStyles.backgroundRepeat;
+            infoss.style.backgroundSize = originalBasicInfoStyles.backgroundSize
+            infoss.style.backgroundPositionY = originalBasicInfoStyles.backgroundPositionY;
+            infoss.style.backgroundPositionX = originalBasicInfoStyles.backgroundPositionX;
+
+
+        }
+    });
+
+    // Asegurarse de que el renderizado del modelo no pierda calidad al cambiar el tamaño
+    const engine = new BABYLON.Engine(renderCanvas, true);  // Usamos "true" para permitir anti-aliasing
+
+    engine.setHardwareScalingLevel(5);  // Asegura la calidad alta en pantalla completa (ajustar si necesario)
+
+    // Opcionalmente, si el modelo está en baja calidad por el tamaño del canvas,
+    // se puede ajustar la resolución del renderizado aquí (en vez de en el canvas directamente)
+    engine.resize();
+});
+
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+</html>

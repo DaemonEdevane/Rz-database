@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <style>
+        /* Mantén tus estilos CSS aquí como estaban */
+.Filtros {
+    text-shadow: 0 0 2px black;
+    color: #d5bc8f;
+    font-weight: bolder;
+    font-family: sans-serif;
+    height: -webkit-fill-available;
+    text-align-last: center;
+    padding-left: 50px;
+    background: #000000a8;
+    border-radius: 40px;
+    height: 220px;
+    padding-top: 20px;
+    width: inherit;
+    border: ridge;
+    border-color: #6d5337;
+}
+
+
+        #mapContainer {
+            position: relative;
+        }
+
+        .point {
+            position: absolute;
+            width: 27px;
+            height: 30px;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+        }
+
+        .point:hover::after {
+            content: attr(data-name);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 3px 5px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+
+        .controls {
+            margin: 10px;
+            display: flex;
+            gap: 10px;
+			z-index: 5;
+			position: absolute;
+        }       
+		.tagselector {
+			color: #000000;
+			background: #deb887;
+			height: 27px;
+			align-content: center;
+			text-align-last: center;
+			width: 210px;
+			border: 2px solid;
+			border-radius: 20px;
+			font-weight: bold;
+			font-family: 'Raiderz';
+			font-size: 15px;
+			box-shadow: 1px 1px 4px #00000082;
+		}
+		select#tagSelect {
+			border-radius: 10px;
+			background: #ffffff;
+			color: black;
+			font-weight: bold;
+			text-transform: capitalize;
+		}
+		button#resetMap {
+			background: #deb887;
+			font-family: 'Raiderz';
+			font-size: 15px;
+		}
+		
+		
+		.cuadrosummary {
+			display: flex;
+			flex-direction: column;
+			color: white;
+			font-family: 'Raiderz';
+			font-weight: bold;
+			max-height: 198px;
+			background: #000000b3;
+			border: 2px solid;
+			border-color: #a58154;
+			border-radius: 11px;
+			min-height: 198px;
+		}
+		
+		label.TitleMap {
+			color: #deb887;
+			font-weight: bolder;
+			text-transform: uppercase;
+			border-bottom-style: solid;
+		}
+		
+		label.Description {
+			padding-left: 11px;
+			padding-right: 11px;
+			padding-top: 6px;
+			font-size: 15px;
+			overflow-y: auto;
+		}
+				
+				
+		.summary {
+			position: absolute;
+			width: 380px;
+			margin-left: 1044px;
+			text-align: -webkit-center;
+		}
+				
+		.filtroos {
+			margin-left: 10px;
+			margin-top: 205px;
+		}
+				
+        }
+    </style>
+    <link rel="stylesheet" href="data/styles/stylesWorldMap.css">
+</head>
+
+<body>
+<div id="menu">
+    <div class="logo">
+        <canvas class="imglogo" id="canvasLogo" style="place-self: center; display: block; width: 100%;" alt="Logo" width="900" height="360"></canvas>
+    </div>
+    <div class="nav-menu">
+        <a href="index.html">Items</a>
+        <a href="quests.html">Quests</a>
+        <a href="npc.html">NPC</a>
+        <a href="monsters.html">Monsters</a>
+        <a href="worldmap.html">Worldmap</a>
+</div>
+</div>
+
+    <!-- Botón para volver al mapamundi -->
+    <div class="controls">
+        <button id="resetMap">Volver al Mapamundi</button>
+		<div class="tagselector">
+			<label>Show in map:</label>
+			<select id="tagSelect" onchange="changeTagAndUpdate(this.value)">
+			<option value="" selected>All</option>
+			<option value="NPC">NPC</option>
+			<option value="QUEST">Quest</option>
+			<option value="MONSTER">Monster</option>
+			</select>
+		</div>
+    </div>
+
+<div class="divisor" style="display: flex;">
+			<!-- Contenedor del mapa -->
+			<div class="mapubication">
+				<div id="mapContainer">
+					<canvas id="mapCanvas" width="1024" height="1024"></canvas>
+				</div>
+			</div>
+		<div class="filtroos">
+			<div class="cantidad">
+				<label for="rowsPerPage">Select amount of rows to display:</label>
+				<select id="rowsPerPage" onchange="changeRowsPerPage()">
+					<option value="10">10</option>
+					<option value="20">20</option> <!-- Establecer 30 filas como seleccionadas por defecto -->
+					<option value="22" selected>Max</option>
+				</select>
+				<div class="paginas">
+					<button id="prevPage" style="border: none; background: url(data/img/bg/botonanterior.png) no-repeat; background-size: cover; height: 28px; width: 29px; background-repeat: no-repeat;"></button>
+					<span id="currentPage" style="vertical-align: super;">Página 1</span>
+					<button id="nextPage" style="border: none; background: url(data/img/bg/botonsiguiente.png) no-repeat; background-size: cover; height: 28px; width: 29px; background-repeat: no-repeat;"></button>
+				</div>
+			</div>
+			
+			<table id="infoTable">
+			<!-- Tabla de información -->
+				<thead>
+					<tr>
+						<th>Nombre</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+		<div class="summary">
+			<div class="cuadrosummary">
+			<label class="TitleMap"></label>
+			<label class="Description"></label>
+			</div>
+		
+		</div>
+</div>
+  <script>
+        let currentPage = 1;
+        let rowsPerPage = 30;
+        let data = [];
+        let filteredData = [];
+
+window.onload = function() {
+    const canvas = document.getElementById('canvasLogo');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'data/interface/icon/logo.png';  // Ruta de tu imagen
+
+    loadExcelData();  // Cargar datos cuando la página se haya cargado
+	
+	
+
+    document.getElementById("prevPage").addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+        displayTablePoints(); // Actualizar la tabla
+        }
+    });
+
+    document.getElementById("nextPage").addEventListener("click", () => {
+        if (currentPage * rowsPerPage < filteredData.length) {
+            currentPage++;
+        displayTablePoints(); // Actualizar la tabla
+        }
+    });
+
+
+    img.onload = function() {
+        // Establecer el tamaño del canvas para que coincida con el tamaño de la imagen
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Dibuja la imagen en el canvas cuando esté cargada
+        drawImageOnCanvas(img);
+
+        // Luego aplicar el efecto de brillo
+        applyShine();
+    };
+
+    // Función para dibujar la imagen en el canvas
+    function drawImageOnCanvas(image) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);  // Dibuja la imagen en el canvas
+    }
+
+    // Función para aplicar el brillo dorado encima de la imagen
+    function applyShine() {
+        let offset = canvas.width;  // Comienza el brillo desde fuera del canvas por la derecha
+
+        function draw() {
+            // Redibuja la imagen sobre el canvas para mantenerla visible
+            drawImageOnCanvas(img);
+
+            // Crear un gradiente de brillo dorado (estilo oro) más estrecho
+            const shineWidth = 150;  // Puedes cambiar este valor para hacer el brillo más pequeño o más grande
+            const gradient = ctx.createLinearGradient(offset, 0, offset - shineWidth, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');    // Transparente
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');  // Brillo dorado
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');    // Transparente
+
+            // Crear un nuevo canvas de máscara para aplicar solo donde la imagen es visible
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+
+            // Dibuja la imagen sobre el maskCanvas
+            maskCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Extraemos la imagen como una máscara, donde lo blanco (opaco) permitirá ver el brillo
+            maskCtx.globalCompositeOperation = 'destination-in';  // Mantener la parte visible de la imagen
+            maskCtx.fillStyle = 'white';  // Definir lo que queremos mantener (la parte opaca de la imagen)
+            maskCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar el brillo sobre la imagen usando la máscara
+            ctx.globalCompositeOperation = 'source-over';  // Asegurarnos de que no se sobrescriba el brillo
+            ctx.drawImage(maskCanvas, 0, 0);  // Aplica la máscara sobre la imagen
+
+            // Usar el gradiente como una capa de brillo sobre la imagen
+            ctx.globalCompositeOperation = 'source-atop';  // Usamos 'source-atop' para que el brillo solo afecte las áreas visibles de la imagen
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restaurar el comportamiento normal de dibujo después de aplicar el brillo
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Mover el brillo hacia la izquierda con la velocidad ajustada
+            offset -= 17;  // Velocidad de 17 como pediste
+
+            // Cuando el brillo haya pasado por completo, reiniciar su posición
+            if (offset < -canvas.width) {
+                offset = canvas.width;
+            }
+
+            // Llamar a la función recursivamente para mantener el brillo en movimiento
+            requestAnimationFrame(draw);
+        }
+        // Iniciar la animación de brillo
+        draw();
+}
+		console.log(document.getElementById("prevPage")); // Debe devolver un elemento no nulo
+}
+
+
+const mapCanvas = document.getElementById("mapCanvas");
+const ctx = mapCanvas.getContext("2d");
+const resetButton = document.getElementById("resetMap");
+const tableBody = document.querySelector("#infoTable tbody");
+const searchInput = document.getElementById("search");
+
+const imageFolder = "data/img/minimap/";
+const defaultMap = `${imageFolder}Kingdom_of_Rendel.jpg`;
+
+const locationImages = {
+    "Kingdom_of_Rendel.jpg": "Kingdom of Rendel",
+    "Broken_Mast.jpg": "Broken Mast",
+    "Ingen.jpg": "Ingen",
+    "Teress_Plain.jpg": "Teress Plain",
+    "Rengot_Village.jpg": "Rengot Village",
+    "Heros_Lane.jpg": "Hero's Lane",
+    "Mt_Eda.jpg": "Mt. Eda",
+    "Riode.jpg": "Riode",
+    "Rietz.jpg": "Rietz",
+    "Grand_Wall_of_Silence.jpg": "Grand Wall of Silence",
+    "Cowen_Marsh.jpg": "Cowen Marsh",
+    "Aranbas_Volcano.jpg": "Aranbas Volcano",
+    "Rinden_Hills.jpg": "Rinden Hills",
+    "Limos_Desert.jpg": "Limos Desert"
+};
+
+const mapDescriptions = {
+	"Ingen": "Ingen is the bustling port city of Rendel, strategically located on the western seaside. It has transformed from a quiet fishing town into one of the busiest ports in the country, where ships dock to unload cargo and fishermen sell their catch. Despite being unaffected by the plague, Ingen faces threats from the Rengot Goblins, who have repeatedly attempted to assault the city, thwarted by the Rendel Knights.",
+	"Broken Mast": "The island is home to the Morten Gear pirate ship, once ruled by the legendary pirate Morten. After his death at sea, the ship fell into disrepair. Morten's daughter, Tian, now controls the ship and has chosen to work with the people of Ingen, fostering cooperation between pirates and locals. Those opposed to Tian's decision have followed Moken, who seeks to destroy her.",
+	"Kingdom of Rendel": "The Kingdom of Rendel is home to ancient ruins and powerful artifacts, such as the Teleport Stones, which attract adventurers and scholars. However, Rendel faces challenges from dark forces, including the malevolent sorcerer Manelloth and the ambitious Rengot Tribe.",
+	"Heros Lane": "Since the plague spread throughout Rendel, many brave heroes have perished in order to protect their country. These fallen soldiers rest peacefully in a region outside of Teress Plain called Hero's Lane.",
+	"Riode": "Riode is surrounded by cherry blossom trees, but corruption has spread even to the Saint Fhannel Monastery, where darkness now reigns. Monastery Director Nator warns that any unwelcome adventurers will face severe consequences.",
+    "Rietz": "Rietz, the heart of the Rendel Kingdom, houses the palace of King Roland and important government facilities. Due to an epidemic in Riode, Rietz has been declared off-limits to visitors, except those arriving via Teleport Stone. While protected by ancient magic wards, the safety of Rietz remains uncertain.",
+    "Teress Plain": "The Teress Plain is a vast grassland that stretches between Ingen and the Rengot Goblin territory. The plain is home to a variety of creatures, both docile and dangerous, and serves as a battleground for the Rengot Goblins and the Rendel Knights.",
+    "Rengot Village": "Rengot Village is the stronghold of the Rengot Goblins, who have organized under their cunning king to reclaim their ancestral lands. The village is heavily fortified, with a Goblin Golem guarding the entrance.",
+    "Cowen Marsh": "Cowen Marsh is a vast, swampy region that lies to the south of Ingen. The marsh is home to a variety of twisted and mutated creatures, including the once-sacred Moss Lord Bollack, who succumbed to madness.",
+    "Mt Eda": "Mt Eda is a towering mountain that lies to the west of Ingen. The mountain is home to a variety of creatures, including the fearsome Diago, a beast of legend that roams the peaks. The Ancient Flame, a powerful artifact, is said to be hidden within the depths of the mountain.",
+    "Grand Wall of Silence": "The Grand Wall of Silence is a massive structure constructed by King Roland to prevent the spread of the plague that ravaged the Eastern Region. The wall is heavily guarded, and few have dared to venture beyond its boundaries.",
+    "Limos Desert": "The Limos Desert is a vast, arid region located to the west of Rendel. The desert is home to a variety of dangerous creatures, as well as the remnants of the meteorite that struck Rendel five years ago.",
+    "Aranbas Volcano": "Located through the northern exit of Cowen Marsh, is a formidable and treacherous landmark in the Kingdom of Rendel. Once a lush and green landscape, the area was devastated by a sudden volcanic eruption that obliterated all life, leaving a desolate wasteland in its wake.The ongoing conflict between two tribes in the area adds to the tension, as they vie for control over the land despite the devastation wrought by the volcano.",
+    "Rinden Hills": "Rinden Hills is a picturesque region marked by rolling hills and lush greenery, but it has recently become shrouded in mystery due to a strange cloud of smoke that has appeared overhead. The source of this smoke remains unknown, causing concern among the local inhabitants. Once a peaceful area, Rinden Hills now carries an air of unease as rumors spread about the potential dangers lurking within the smoke."
+};
+
+let pointsData = [];
+let currentMap = "Kingdom of Rendel"; // Inicialmente, el mapa mundial está cargado
+let mapLoaded = false;  // Flag para verificar si el mapa individual ha sido cargado
+
+// Coordenadas de clic para cada mapa
+const mapCoordinates = [
+    { map: "Broken_Mast", x: 32, y: 478.0 },
+    { map: "Ingen", x: 130.0, y: 375.0 },
+    { map: "Teress_Plain", x: 165.0, y: 278.0 },
+    { map: "Rengot_Village", x: 115.0, y: 172.0 },
+    { map: "Heros_Lane", x: 317.0, y: 322.0 },
+    { map: "Mt_Eda", x: 467.0, y: 364.0 },
+    { map: "Riode", x: 577.0, y: 262.0 },
+    { map: "Rietz", x: 578.0, y: 213.0 },
+    { map: "Grand_Wall_of_Silence", x: 677.0, y: 227.0 },
+    { map: "Cowen_Marsh", x: 802.0, y: 246.0 },
+    { map: "Aranbas_Volcano", x: 876.0, y: 62.0 },
+    { map: "Rinden_Hills", x: 950.0, y: 356.0 },
+    { map: "Limos_Desert", x: 923.0, y: 504.0 }
+];
+
+// Cargar mapa
+const mapImage = new Image();
+mapImage.src = defaultMap;
+mapImage.onload = () => {
+    ctx.drawImage(mapImage, 0, 0, mapCanvas.width, mapCanvas.height);
+    currentMap = "Kingdom of Rendel"; // Al principio, el mapa mundial está cargado
+	updateMapDescription(currentMap); // Actualiza la descripción
+    mapLoaded = false; // Aseguramos que no se cargue un mapa individual por error
+};
+
+
+function updateMapDescription(mapName) {
+    const titleLabel = document.querySelector(".TitleMap");
+    const descriptionLabel = document.querySelector(".Description");
+
+    if (mapDescriptions[mapName]) {
+        titleLabel.textContent = mapName;
+        descriptionLabel.textContent = mapDescriptions[mapName];
+    } else {
+        titleLabel.textContent = "Unknown Map";
+        descriptionLabel.textContent = "No description available for this map.";
+    }
+}
+
+// Cargar datos desde Excel
+function loadExcelData() {
+    fetch("data/xlsx/Coordenadas.xlsx")
+        .then((response) => response.arrayBuffer())
+        .then((data) => {
+            const workbook = XLSX.read(data, { type: "array" });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            pointsData = rows.slice(1).map(row => ({
+                Archivo: row[0],
+                Tag: row[1],
+                Nombre: row[3],
+                x: row[4],
+                y: row[5],
+				Icon1: row[13]
+            }));
+
+            displayPoints();  // Mostrar los puntos filtrados inicialmente
+        });
+}
+
+
+
+// Mostrar puntos con paginación y filtrado
+// Mostrar puntos con paginación y filtrado
+let currentFilterTag = ""; // Variable global para almacenar el filtro actual
+
+// Mostrar puntos en el mapa (sin limitar la cantidad por filas de tabla)
+function displayPoints(filterTag = null) {
+    if (filterTag !== null) {
+        currentFilterTag = filterTag; // Actualizar el filtro global solo si se proporciona un nuevo filtro
+    }
+    
+    const formattedMapName = currentMap.replace(/_/g, " ");
+    console.log("Mostrando puntos para el mapa:", formattedMapName);
+
+    // Filtrar los puntos según el mapa y la etiqueta
+    filteredData = pointsData.filter(point => 
+        point.Archivo === formattedMapName && 
+        (currentFilterTag === "" || point.Tag === currentFilterTag)
+    );
+
+    console.log("Puntos filtrados para el mapa:", filteredData);
+
+    // Limpiar puntos previos en el mapa
+    document.querySelectorAll(".point").forEach(p => p.remove());
+
+    const mapWidth = mapImage.width * zoomFactor;
+    const mapHeight = mapImage.height * zoomFactor;
+
+    filteredData.forEach(point => {
+        const { x, y, Nombre, Tag, Icon1 } = point;
+
+        // Escalar posiciones según el zoom y desplazamiento
+        const scaledX = (x * mapWidth / mapImage.width) + offsetX;
+        const scaledY = (y * mapHeight / mapImage.height) + offsetY;
+
+        // Validar que los puntos estén dentro de los límites visibles
+        if (
+            scaledX >= 0 && scaledX <= mapCanvas.width &&
+            scaledY >= 0 && scaledY <= mapCanvas.height
+        ) {
+            // Seleccionar imagen basada en el valor de Icon1
+            let iconPath = `data/interface/icon/MapIcons/${Icon1 || "quest"}.png`;
+            if (
+                Icon1 &&
+                !["accesory", "armor", "beautyshop", "common", "cook", "element_enchant", "food", "guild_create", "enchant", "monster", "hellhound", "inn_save", "inventory", "repair", "ride", "skillset", "trade_market", "usable", "weapon"].includes(Icon1)
+            ) {
+                console.warn(`Icono no reconocido: ${Icon1}, usando imagen predeterminada.`);
+                iconPath = "data/interface/icon/MapIcons/quest.png";
+            }
+
+            console.log(`Creando punto: Nombre=${Nombre}, Icon1=${Icon1}, Escalado X=${scaledX}, Escalado Y=${scaledY}`);
+
+            // Crear el elemento de imagen
+            const img = document.createElement("img");
+            img.src = iconPath;
+            img.className = "point";
+            img.style.left = `${scaledX}px`;
+            img.style.top = `${scaledY}px`;
+            img.title = Nombre || "Sin nombre";
+
+            document.getElementById("mapContainer").appendChild(img);
+        }
+    });
+
+    if (filteredData.length === 0) {
+        console.warn("No hay puntos para mostrar en este mapa.");
+    }
+}
+
+
+// Mostrar puntos en la tabla con la cantidad especificada por "rowsPerPage"
+function displayTablePoints() {
+    const rowsPerPage = parseInt(document.getElementById("rowsPerPage").value, 10);
+    const formattedMapName = currentMap.replace(/_/g, " ");
+    console.log("Mostrando puntos para la tabla:", formattedMapName);
+
+    // Filtrar los puntos según el mapa y la etiqueta
+    filteredData = pointsData.filter(point => 
+        point.Archivo === formattedMapName && 
+        (currentFilterTag === "" || point.Tag === currentFilterTag)
+    );
+
+    console.log("Puntos filtrados para la tabla:", filteredData);
+
+    // Limpiar la tabla
+    const tableBody = document.querySelector("#infoTable tbody");
+    tableBody.innerHTML = "";
+
+    // Calcular el rango de filas a mostrar
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const paginatedData = filteredData.slice(start, end);
+
+    let rowCount = 0;
+
+    paginatedData.forEach(point => {
+        const { Nombre } = point;
+
+        // Crear fila en la tabla
+        if (rowCount < rowsPerPage) {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${Nombre || "Sin nombre"}</td>`;
+            tableBody.appendChild(row);
+            rowCount++;
+        }
+    });
+
+    adjustRowHeight(paginatedData.length);
+}
+
+
+function changeTagAndUpdate(newTag) {
+    currentFilterTag = newTag; // Cambiar el filtro global al valor seleccionado
+    currentPage = 1; // Reiniciar a la primera página
+    displayPoints(); // Actualizar los puntos en el mapa
+    displayTablePoints(); // Actualizar la tabla
+}
+
+// Función para ajustar la altura de las filas
+function adjustRowHeight(visiblePointsCount) {
+    const tableRows = document.querySelectorAll("#infoTable tbody tr");
+    const maxHeight = 40; // Valor máximo de altura para las filas
+    const minHeight = 20; // Valor mínimo de altura para las filas
+
+    // Ajustar la altura en función de la cantidad de puntos visibles
+    const newHeight = Math.max(minHeight, maxHeight - (visiblePointsCount * 2));
+    
+    tableRows.forEach(row => {
+        row.style.height = `${newHeight}px`;
+    });
+}
+
+// Cambiar filas por página
+function changeRowsPerPage() {
+    const rowsPerPageSelect = document.getElementById("rowsPerPage");
+    rowsPerPage = parseInt(rowsPerPageSelect.value, 10); // Se usa 10 como valor por defecto
+    currentPage = 1; // Reiniciar a la primera página
+    displayTablePoints(); // Solo actualizar la tabla
+}
+
+function paginateTable() {
+  const table = document.getElementById('infoTable');
+  const rows = table.getElementsByTagName('tr');
+  let rowIndex = 1; // Comienza desde la segunda fila (saltando los encabezados)
+
+  // Ocultar todas las filas primero
+  for (let i = 1; i < rows.length; i++) {
+    rows[i].style.display = 'none';
+  }
+
+  // Mostrar las filas según la cantidad seleccionada
+  for (let i = 0; i < rowsPerPage && rowIndex < rows.length; i++, rowIndex++) {
+    rows[rowIndex].style.display = '';
+  }
+}
+
+// Llamar a paginateTable inicialmente para mostrar las primeras filas
+paginateTable();
+
+
+// Cambiar mapa y cargar puntos correspondientes
+function changeMap(mapName) {
+    console.log("Cambiando al mapa:", mapName);
+    const MapNameTrue = mapName.replace(/_/g, " ");
+    const mapKey = `${mapName}.jpg`;
+
+    // Restablecer zoom y desplazamientos
+    resetZoom();
+
+    if (locationImages[mapKey]) {
+        console.log(`Cargando mapa: ${locationImages[mapKey]}`);
+        console.log(`Cargando mapa: ${imageFolder}${mapKey}`);
+        const newMapSrc = `${imageFolder}${mapKey}`;
+        mapImage.src = newMapSrc;
+
+        updateMapDescription(MapNameTrue);
+
+        mapImage.onload = () => {
+            ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+            ctx.drawImage(mapImage, 0, 0, mapCanvas.width, mapCanvas.height);
+            currentMap = mapName; // Actualiza el mapa actual
+            displayPoints(); // Mostrar los puntos del nuevo mapa
+        };
+    } else {
+        console.error("Mapa no encontrado en locationImages:", mapName);
+    }
+}
+
+// Función para restablecer el zoom y los desplazamientos
+function resetZoom() {
+    zoomFactor = 1; // Restablecer el factor de zoom al valor inicial
+    offsetX = 0;    // Restablecer el desplazamiento en X
+    offsetY = 0;    // Restablecer el desplazamiento en Y
+
+    // Limpiar el canvas y redibujar el mapa en su estado original
+    ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+    ctx.drawImage(mapImage, 0, 0, mapCanvas.width, mapCanvas.height);
+
+    // Asegurarse de que los puntos reflejen el estado original
+    displayPoints();
+}
+
+let zoomFactor = 1; // Factor de zoom inicial
+const minZoomFactor = 1; // Factor de zoom mínimo (tamaño original)
+const maxZoomFactor = 3; // Factor de zoom máximo (puedes ajustarlo si es necesario)
+let offsetX = 0; // Desplazamiento de la imagen en X
+let offsetY = 0; // Desplazamiento de la imagen en Y
+let isDragging = false; // Estado para verificar si la imagen está siendo arrastrada
+let startX, startY; // Coordenadas iniciales para el arrastre
+
+// Función para manejar el zoom
+function zoomMap(factor) {
+    zoomFactor *= factor;
+
+    // Limitar el zoom entre el tamaño original y el máximo permitido
+    zoomFactor = Math.max(minZoomFactor, Math.min(zoomFactor, maxZoomFactor));
+
+    const mapWidth = mapImage.width * zoomFactor;
+    const mapHeight = mapImage.height * zoomFactor;
+
+    offsetX = (mapCanvas.width - mapWidth) / 2;
+    offsetY = (mapCanvas.height - mapHeight) / 2;
+
+    ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+    ctx.drawImage(mapImage, offsetX, offsetY, mapWidth, mapHeight);
+
+    displayPoints();
+}
+
+// Event listener para el zoom con la rueda del ratón (ya no es necesario usar botones)
+mapCanvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+
+    // Determinar la dirección del zoom (si se hace scroll hacia arriba o hacia abajo)
+    const zoomIn = e.deltaY < 0; // Si el valor de deltaY es negativo, se hace zoom in
+    const zoomOut = e.deltaY > 0; // Si el valor de deltaY es positivo, se hace zoom out
+
+    if (zoomIn) {
+        zoomMap(1.2); // Aumentar el zoom
+    } else if (zoomOut) {
+        zoomMap(0.8); // Reducir el zoom, pero no por debajo del tamaño original
+    }
+});
+
+
+
+// Event listener para el zoom con la rueda del ratón
+document.getElementById("mapContainer").addEventListener("wheel", (event) => {
+    // Determinar la dirección del zoom
+    if (currentMap === "Kingdom of Rendel"){
+	zoomMap(0);
+	}
+	else {
+	
+	if (event.deltaY < 0) {
+        zoomMap(1.1); // Hacer zoom in (más grande)
+    } else {
+        zoomMap(0.9); // Hacer zoom out (más pequeño)
+    }
+	}
+    event.preventDefault(); // Prevenir el comportamiento por defecto (desplazamiento de la página)
+});
+
+// Event listeners para arrastrar la imagen
+document.getElementById("mapContainer").addEventListener("mousedown", (event) => {
+    isDragging = true;
+    startX = event.clientX - offsetX;
+    startY = event.clientY - offsetY;
+});
+
+// Event listeners para arrastrar la imagen
+document.getElementById("mapContainer").addEventListener("mousedown", (event) => {
+    isDragging = true;
+    startX = event.clientX - offsetX;
+    startY = event.clientY - offsetY;
+});
+
+document.getElementById("mapContainer").addEventListener("mousemove", (event) => {
+    if (isDragging) {
+        offsetX = event.clientX - startX;
+        offsetY = event.clientY - startY;
+
+        // Limitar el desplazamiento para que la imagen no se salga del canvas
+        const maxWidth = mapCanvas.width * zoomFactor;
+        const maxHeight = mapCanvas.height * zoomFactor;
+
+        offsetX = Math.min(Math.max(offsetX, mapCanvas.width - maxWidth), 0);
+        offsetY = Math.min(Math.max(offsetY, mapCanvas.height - maxHeight), 0);
+
+        ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height); // Limpiar el canvas
+        ctx.drawImage(mapImage, offsetX, offsetY, maxWidth, maxHeight); // Dibujar la imagen desplazada
+        displayPoints(); // Re-dibujar los puntos
+    }
+});
+
+document.getElementById("mapContainer").addEventListener("mouseup", () => {
+    isDragging = false;
+});
+
+document.getElementById("mapContainer").addEventListener("mouseleave", () => {
+    isDragging = false;
+});
+
+
+
+
+
+
+
+// Cuando se haga clic en el mapa, cambiará al mapa correspondiente
+mapCanvas.addEventListener("click", (e) => {
+    if (currentMap === "Kingdom of Rendel") {
+        // Calculamos las coordenadas relativas al canvas
+        const x = e.offsetX;
+        const y = e.offsetY;
+
+        // Verificamos si el clic fue cerca de alguna de las coordenadas definidas
+        mapCoordinates.forEach(coord => {
+            if (Math.abs(x - coord.x) < 30 && Math.abs(y - coord.y) < 30) {
+                // Cargar el mapa correspondiente
+                changeMap(coord.map);
+            }
+        });
+    }
+});
+
+
+// Resetear mapa
+resetButton.addEventListener("click", () => {
+    mapImage.src = defaultMap; // Carga el mapa mundial
+    mapImage.onload = () => {
+        ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height); // Limpia el canvas
+        ctx.drawImage(mapImage, 0, 0, mapCanvas.width, mapCanvas.height); // Dibuja el mapamundi
+    };
+
+    // Resetear las variables relacionadas con el zoom y el mapa
+    currentMap = "Kingdom of Rendel"; // Actualiza el mapa actual
+    mapLoaded = false; // Marca que no estás en un mapa individual
+    currentZoomLevel = 0; // Reinicia el nivel de zoom
+    currentZoom = 1; // Restablece el zoom al valor original
+    updateMapDescription(currentMap); // Actualiza la descripción del mapa
+    zoomMap(1); // Restaura el zoom inicial (sin aplicar cambios adicionales)
+
+    // Opcional: Si tienes un sistema para centrar o mover el mapa, resetea su posición también
+    mapOffsetX = 0; // Reinicia el desplazamiento horizontal
+    mapOffsetY = 0; // Reinicia el desplazamiento vertical
+
+    displayPoints(); // Muestra los puntos del mapa mundial
+	resetZoom();
+});
+
+
+// Inicializar datos
+loadExcelData();
+
+
+
+    </script>
+
+
+</body>
